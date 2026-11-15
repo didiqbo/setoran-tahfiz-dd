@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Asisten Setoran Tahfiz Anak</title>
+  <title>Asisten Belajar Mengaji & Tahfiz Anak</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --primary: #0f766e;
@@ -20,6 +20,9 @@
       --muted: #64748b;
       --border: #e2e8f0;
       --success: #15803d;
+      --success-bg: #dcfce7;
+      --error: #b91c1c;
+      --error-bg: #fee2e2;
     }
 
     * {
@@ -37,13 +40,13 @@
     }
 
     .container {
-      max-width: 900px;
+      max-width: 920px;
       margin: 0 auto;
     }
 
     header {
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       padding: 18px 16px;
       background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
@@ -57,8 +60,45 @@
     }
 
     header p {
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       opacity: 0.92;
+    }
+
+    .mode-switcher {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .mode-card-btn {
+      padding: 14px 12px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--card);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .mode-card-btn.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      box-shadow: 0 3px 10px rgba(15, 118, 110, 0.12);
+    }
+
+    .mode-title {
+      display: block;
+      font-weight: 700;
+      font-size: 0.96rem;
+      color: var(--primary-dark);
+    }
+
+    .mode-desc {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
     }
 
     .card {
@@ -66,7 +106,7 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 16px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
@@ -86,9 +126,8 @@
       border-radius: 10px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       color: var(--muted);
-      transition: all 0.2s;
     }
 
     .tab-btn.active {
@@ -99,16 +138,16 @@
 
     .grid-controls {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px;
-      margin-bottom: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
     }
 
     label {
       display: block;
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       font-weight: 600;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
       color: var(--text);
     }
 
@@ -119,7 +158,7 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       font-family: inherit;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       background: white;
     }
 
@@ -129,7 +168,7 @@
     }
 
     textarea {
-      font-family: 'Amiri', serif;
+      font-family: 'Amiri Quran', 'Amiri', serif;
       font-size: 1.4rem;
       direction: rtl;
       min-height: 110px;
@@ -137,9 +176,9 @@
 
     .settings-bar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
       gap: 12px;
-      padding-top: 14px;
+      padding-top: 12px;
       border-top: 1px dashed var(--border);
     }
 
@@ -148,20 +187,15 @@
       color: white;
       border: none;
       min-height: 46px;
-      padding: 12px 18px;
+      padding: 12px 16px;
       border-radius: 10px;
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 0.94rem;
       cursor: pointer;
-      transition: background 0.2s;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-dark);
     }
 
     .btn-danger {
@@ -169,10 +203,10 @@
       color: white;
       border: none;
       min-height: 46px;
-      padding: 12px 18px;
+      padding: 12px 16px;
       border-radius: 10px;
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 0.94rem;
       cursor: pointer;
     }
 
@@ -181,23 +215,23 @@
       color: var(--text);
       border: 1px solid var(--border);
       min-height: 44px;
-      padding: 10px 14px;
+      padding: 10px 12px;
       border-radius: 10px;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       cursor: pointer;
     }
 
     .action-row {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 10px;
+      margin-bottom: 14px;
     }
 
     .button-group {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
       gap: 8px;
     }
 
@@ -208,7 +242,7 @@
       gap: 8px;
       padding: 10px 14px;
       border-radius: 10px;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 600;
       background: var(--bg);
       border: 1px solid var(--border);
@@ -224,6 +258,12 @@
       background: var(--accent-light);
       color: #92400e;
       border-color: var(--accent);
+    }
+
+    .status-badge.error-state {
+      background: var(--error-bg);
+      color: var(--error);
+      border-color: #f87171;
     }
 
     .dot {
@@ -244,31 +284,59 @@
       animation: pulse 0.8s infinite;
     }
 
+    .error-state .dot {
+      background: var(--error);
+    }
+
     @keyframes pulse {
       0% { transform: scale(0.95); opacity: 0.7; }
       50% { transform: scale(1.25); opacity: 1; }
       100% { transform: scale(0.95); opacity: 0.7; }
     }
 
+    .legend-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 0.78rem;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
     .ayat-stage {
       background: #fffbeb;
       border: 2px solid #fde68a;
       border-radius: 16px;
-      padding: 20px 16px;
+      padding: 20px 14px;
       min-height: 200px;
       direction: rtl;
       text-align: right;
-      font-family: 'Amiri', serif;
-      font-size: 2.1rem;
-      line-height: 2.3;
+      font-family: 'Amiri Quran', 'Amiri', serif;
+      font-size: 2.15rem;
+      line-height: 2.5;
       word-wrap: break-word;
     }
 
     @media (max-width: 600px) {
       .ayat-stage {
-        font-size: 1.85rem;
-        line-height: 2.2;
-        padding: 16px 12px;
+        font-size: 1.9rem;
+        line-height: 2.45;
+        padding: 16px 10px;
       }
     }
 
@@ -285,10 +353,33 @@
 
     .word {
       display: inline-block;
-      margin-left: 8px;
-      padding: 2px 6px;
+      margin-left: 6px;
+      padding: 2px 7px;
       border-radius: 8px;
-      transition: all 0.25s ease;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-bottom: 2px solid transparent;
+    }
+
+    .word.active-cursor {
+      background: #fef08a;
+      border-bottom: 3px solid #ca8a04;
+    }
+
+    .word.tajwid-mad {
+      border-bottom: 3px dotted #9333ea;
+    }
+
+    .word.tajwid-ghunnah {
+      border-bottom: 3px dotted #0284c7;
+    }
+
+    .word.tajwid-qalqalah {
+      border-bottom: 3px dotted #ea580c;
+    }
+
+    .word.tajwid-waqaf {
+      background-color: rgba(15, 118, 110, 0.08);
     }
 
     .word.hidden-word {
@@ -310,12 +401,20 @@
       border-bottom: 3px solid var(--accent);
       filter: none;
       opacity: 1;
-      transform: scale(1.04);
     }
 
     .word.matched-word {
-      color: var(--success);
-      background: #dcfce7;
+      color: var(--success) !important;
+      background: var(--success-bg) !important;
+      border-bottom: 2px solid #22c55e !important;
+      filter: none;
+      opacity: 1;
+    }
+
+    .word.wrong-word {
+      color: var(--error) !important;
+      background: var(--error-bg) !important;
+      border-bottom: 3px solid #ef4444 !important;
       filter: none;
       opacity: 1;
     }
@@ -324,7 +423,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.05rem;
+      font-size: 1rem;
       color: var(--primary-dark);
       background: var(--primary-light);
       border: 1px solid var(--primary);
@@ -335,21 +434,89 @@
       vertical-align: middle;
     }
 
+    .correction-panel {
+      margin-top: 14px;
+      border-radius: 14px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+    }
+
+    .correction-panel.alert-error {
+      background: #fef2f2;
+      border-color: #fca5a5;
+    }
+
+    .correction-panel.alert-info {
+      background: #f0fdfa;
+      border-color: #99f6e4;
+    }
+
+    .correction-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .correction-arabic {
+      font-family: 'Amiri Quran', 'Amiri', serif;
+      font-size: 1.85rem;
+      direction: rtl;
+      color: var(--text);
+    }
+
+    .rule-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.88rem;
+    }
+
+    .rule-item {
+      background: white;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border-left: 4px solid var(--primary);
+    }
+
+    .rule-item.rule-warn {
+      border-left-color: #dc2626;
+    }
+
+    .rule-item.rule-mad {
+      border-left-color: #9333ea;
+    }
+
+    .rule-item.rule-waqaf {
+      border-left-color: #0d9488;
+    }
+
+    .manual-grade-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
     .transcript-box {
       margin-top: 14px;
       padding: 12px 14px;
       background: var(--bg);
       border-radius: 10px;
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       color: var(--muted);
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .arabic-live {
-      font-family: 'Amiri', serif;
-      font-size: 1.3rem;
+      font-family: 'Amiri Quran', 'Amiri', serif;
+      font-size: 1.35rem;
       color: var(--text);
       direction: rtl;
       display: inline-block;
@@ -357,17 +524,17 @@
 
     .stats-row {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
     .stat-pill {
       background: var(--primary-light);
       color: var(--primary-dark);
-      padding: 6px 12px;
+      padding: 5px 11px;
       border-radius: 8px;
       font-weight: 700;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
     }
 
     .hidden {
@@ -381,25 +548,36 @@
       padding: 12px 14px;
       border-radius: 10px;
       margin-bottom: 14px;
-      font-size: 0.88rem;
+      font-size: 0.86rem;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>Asisten Setoran Tahfiz Al-Qur'an</h1>
-      <p>Menyimak bacaan anak dan memancing huruf awal saat anak terdiam lupa</p>
+      <h1>Asisten Belajar Mengaji & Tahfiz</h1>
+      <p>Koreksi tajwid, panjang pendek harakat, waqaf ibtida, dan setoran hafalan anak</p>
     </header>
 
     <div id="browserWarning" class="warning-banner hidden">
-      Peramban ponsel ini belum mendukung pengenalan suara otomatis. Buka berkas ini menggunakan Google Chrome versi terbaru dan pastikan izin mikrofon aktif.
+      Peramban ini belum mendukung pengenalan suara otomatis. Gunakan Safari atau Google Chrome versi terbaru pada ponsel Anda dan izinkan akses mikrofon.
+    </div>
+
+    <div class="mode-switcher">
+      <button type="button" class="mode-card-btn active" id="btnModeMengaji" onclick="setAppMode('mengaji')">
+        <span class="mode-title">Belajar Mengaji & Tajwid</span>
+        <span class="mode-desc">Huruf tampil, koreksi hijau atau merah</span>
+      </button>
+      <button type="button" class="mode-card-btn" id="btnModeTahfiz" onclick="setAppMode('tahfiz')">
+        <span class="mode-title">Setoran Hafalan</span>
+        <span class="mode-desc">Huruf tertutup, pancingan saat lupa</span>
+      </button>
     </div>
 
     <div class="card">
       <div class="tabs">
-        <button class="tab-btn active" id="tabApi" onclick="switchSource('api')">Pilih Surah</button>
-        <button class="tab-btn" id="tabManual" onclick="switchSource('manual')">Tempel Teks Manual</button>
+        <button type="button" class="tab-btn active" id="tabApi" onclick="switchSource('api')">Pilih Surah</button>
+        <button type="button" class="tab-btn" id="tabManual" onclick="switchSource('manual')">Tempel Teks Manual</button>
       </div>
 
       <div id="panelApi">
@@ -419,20 +597,45 @@
             <input type="number" id="endAyah" min="1" value="5">
           </div>
           <div style="display:flex; align-items:flex-end;">
-            <button class="btn-primary" style="width:100%;" onclick="loadSurahVerses()">Muat Ayat</button>
+            <button type="button" class="btn-primary" style="width:100%;" onclick="loadSurahVerses()">Muat Ayat</button>
           </div>
         </div>
       </div>
 
       <div id="panelManual" class="hidden">
-        <label for="manualInput">Masukkan Teks Arab berharakat</label>
-        <textarea id="manualInput" placeholder="Tempel teks ayat di sini, pisahkan tiap ayat dengan baris baru..."></textarea>
+        <label for="manualInput">Masukkan Teks Arab berharakat lengkap</label>
+        <textarea id="manualInput" placeholder="Tempel teks ayat berharakat di sini, pisahkan tiap ayat dengan baris baru..."></textarea>
         <div style="margin-top:10px;">
-          <button class="btn-primary" style="width:100%;" onclick="loadManualVerses()">Gunakan Teks Ini</button>
+          <button type="button" class="btn-primary" style="width:100%;" onclick="loadManualVerses()">Gunakan Teks Ini</button>
         </div>
       </div>
 
-      <div class="settings-bar">
+      <div id="settingsMengaji" class="settings-bar">
+        <div>
+          <label for="tajwidHighlight">Penanda Garis Tajwid pada Huruf</label>
+          <select id="tajwidHighlight" onchange="renderStage()">
+            <option value="on">Aktif</option>
+            <option value="off">Nonaktif</option>
+          </select>
+        </div>
+        <div>
+          <label for="strictMad">Ketelitian Panjang Mad</label>
+          <select id="strictMad">
+            <option value="normal">Sedang</option>
+            <option value="strict">Ketat</option>
+            <option value="relaxed">Longgar untuk Pemula</option>
+          </select>
+        </div>
+        <div>
+          <label for="voiceCorrection">Suara Contoh Bacaan</label>
+          <select id="voiceCorrection">
+            <option value="on">Aktif saat Salah atau Diklik</option>
+            <option value="off">Nonaktif</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="settingsTahfiz" class="settings-bar hidden">
         <div>
           <label for="pauseTimeout">Batas Waktu Diam: <span id="pauseVal">4</span> detik</label>
           <input type="range" id="pauseTimeout" min="2" max="10" value="4" oninput="document.getElementById('pauseVal').textContent = this.value">
@@ -468,16 +671,40 @@
           <span id="statusText">Siap menyimak</span>
         </div>
         <div class="button-group">
-          <button id="btnStart" class="btn-primary" onclick="startRecitation()">Mulai Setoran</button>
-          <button id="btnStop" class="btn-danger hidden" onclick="stopRecitation()">Berhenti</button>
-          <button class="btn-secondary" onclick="triggerManualHint()">Pancing Sekarang</button>
-          <button class="btn-secondary" onclick="resetProgress()">Ulangi Awal</button>
+          <button type="button" id="btnStart" class="btn-primary" onclick="startRecitation()">Mulai Membaca</button>
+          <button type="button" id="btnStop" class="btn-danger hidden" onclick="stopRecitation()">Berhenti</button>
+          <button type="button" id="btnHintAction" class="btn-secondary hidden" onclick="triggerManualHint()">Pancing Sekarang</button>
+          <button type="button" class="btn-secondary" onclick="resetProgress()">Ulangi Awal</button>
         </div>
+      </div>
+
+      <div id="legendMengaji" class="legend-bar">
+        <span class="legend-item"><span class="swatch" style="background:#22c55e;"></span> Bacaan Benar</span>
+        <span class="legend-item"><span class="swatch" style="background:#ef4444;"></span> Bacaan Salah</span>
+        <span class="legend-item"><span class="swatch" style="background:#9333ea;"></span> Hukum Mad</span>
+        <span class="legend-item"><span class="swatch" style="background:#0284c7;"></span> Dengung Tajwid</span>
+        <span class="legend-item"><span class="swatch" style="background:#ea580c;"></span> Qalqalah</span>
       </div>
 
       <div id="ayatStage" class="ayat-stage">
         <div style="text-align:center; color:#92400e; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.95rem;">
           Pilih surah dan rentang ayat di atas, lalu tekan tombol <strong>Muat Ayat</strong> untuk memulai.
+        </div>
+      </div>
+
+      <div id="correctionPanel" class="correction-panel alert-info hidden">
+        <div class="correction-header">
+          <div>
+            <strong id="correctionTitle" style="font-size:0.95rem;">Analisis Tajwid & Tanda Baca</strong>
+            <div id="correctionSubtitle" style="font-size:0.8rem; color:var(--muted);">Ketuk kata mana saja pada ayat untuk melihat panduan harakat, tajwid, dan waqaf</div>
+          </div>
+          <div id="correctionWordArabic" class="correction-arabic"></div>
+        </div>
+        <ul id="correctionRulesList" class="rule-list"></ul>
+        <div class="manual-grade-row">
+          <button type="button" class="btn-secondary" onclick="speakSelectedWord()">Dengarkan Lafal Kata Ini</button>
+          <button type="button" class="btn-secondary" style="color:var(--success); border-color:#86efac;" onclick="markSelectedWord('matched')">Tandai Benar</button>
+          <button type="button" class="btn-secondary" style="color:var(--error); border-color:#fca5a5;" onclick="markSelectedWord('wrong')">Tandai Salah</button>
         </div>
       </div>
 
@@ -487,20 +714,25 @@
           <span id="liveSpeech" class="arabic-live">-</span>
         </div>
         <div class="stats-row">
-          <span class="stat-pill">Kemajuan: <span id="progressCount">0 / 0</span> kata</span>
-          <span class="stat-pill" style="background:#fef3c7; color:#92400e;">Bantuan: <span id="hintCount">0</span> kali</span>
+          <span class="stat-pill">Benar: <span id="correctCount">0</span></span>
+          <span class="stat-pill" id="pillWrong" style="background:#fee2e2; color:#b91c1c;">Salah: <span id="wrongCount">0</span></span>
+          <span class="stat-pill" id="pillHint" style="background:#fef3c7; color:#92400e; display:none;">Bantuan: <span id="hintCount">0</span> kali</span>
+          <span class="stat-pill" style="background:#e2e8f0; color:#334155;">Total: <span id="totalWordsCount">0</span> kata</span>
         </div>
       </div>
     </div>
   </div>
 
   <script>
+    let appMode = 'mengaji';
     let versesData = [];
     let flatWords = [];
     let currentWordIdx = 0;
+    let selectedWordIdx = -1;
     let isListening = false;
     let recognition = null;
     let lastSpeechTime = Date.now();
+    let lastWordMatchedTime = Date.now();
     let silenceTimer = null;
     let currentHintLevel = 0;
     let totalHintsUsed = 0;
@@ -515,6 +747,33 @@
       }
       fetchSurahList();
     });
+
+    function setAppMode(mode) {
+      appMode = mode;
+      stopRecitation();
+
+      document.getElementById('btnModeMengaji').classList.toggle('active', mode === 'mengaji');
+      document.getElementById('btnModeTahfiz').classList.toggle('active', mode === 'tahfiz');
+
+      document.getElementById('settingsMengaji').classList.toggle('hidden', mode !== 'mengaji');
+      document.getElementById('settingsTahfiz').classList.toggle('hidden', mode !== 'tahfiz');
+
+      document.getElementById('legendMengaji').classList.toggle('hidden', mode !== 'mengaji');
+      document.getElementById('btnHintAction').classList.toggle('hidden', mode !== 'tahfiz');
+
+      document.getElementById('pillWrong').style.display = mode === 'mengaji' ? 'inline-block' : 'none';
+      document.getElementById('pillHint').style.display = mode === 'tahfiz' ? 'inline-block' : 'none';
+
+      document.getElementById('btnStart').textContent = mode === 'mengaji' ? 'Mulai Membaca' : 'Mulai Setoran';
+
+      if (mode === 'mengaji' && flatWords.length > 0) {
+        inspectWord(0, false);
+      } else {
+        document.getElementById('correctionPanel').classList.add('hidden');
+      }
+
+      resetProgress();
+    }
 
     async function requestWakeLock() {
       try {
@@ -547,8 +806,8 @@
         surahListCache.forEach(s => {
           const opt = document.createElement('option');
           opt.value = s.number;
-          opt.textContent = `${s.number}. ${s.englishName} (${s.name}) - ${s.numberOfAyahs} ayat`;
-          if (s.number === 112) opt.selected = true;
+          opt.textContent = `${s.number}. ${s.englishName} - ${s.numberOfAyahs} ayat`;
+          if (s.number === 1) opt.selected = true;
           select.appendChild(opt);
         });
         onSurahChange();
@@ -564,7 +823,7 @@
       if (found) {
         document.getElementById('startAyah').value = 1;
         document.getElementById('startAyah').max = found.numberOfAyahs;
-        document.getElementById('endAyah').value = Math.min(found.numberOfAyahs, 10);
+        document.getElementById('endAyah').value = Math.min(found.numberOfAyahs, 7);
         document.getElementById('endAyah').max = found.numberOfAyahs;
       }
     }
@@ -578,10 +837,10 @@
       if (!surahNum) return;
 
       const stage = document.getElementById('ayatStage');
-      stage.innerHTML = '<div style="text-align:center; font-family:sans-serif; font-size:0.95rem;">Mengambil teks ayat...</div>';
+      stage.innerHTML = '<div style="text-align:center; font-family:sans-serif; font-size:0.95rem;">Mengambil teks ayat Utsmani...</div>';
 
       try {
-        const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNum}/quran-simple`);
+        const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNum}/quran-uthmani`);
         const json = await res.json();
         const allAyahs = json.data.ayahs;
 
@@ -589,7 +848,7 @@
         versesData = filtered.map(a => {
           let txt = a.text.trim();
           if (surahNum != 1 && surahNum != 9 && a.numberInSurah === 1) {
-            txt = txt.replace(/^بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\s*/, '');
+            txt = txt.replace(/^بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ\s*/, '');
           }
           return {
             number: a.numberInSurah,
@@ -625,12 +884,214 @@
         .trim();
     }
 
+    function analyzeWordTajwid(word, nextWord, isLastWordOfAyah) {
+      const rules = [];
+      let primaryTag = '';
+      let requiredMinSeconds = 0.22;
+      let waqafType = 'none';
+
+      // 1. Analisis Tanda Waqaf (Ilmu Berhenti dan Lanjut)
+      if (word.includes('\u06D9')) {
+        waqafType = 'forbid';
+        rules.push({
+          type: 'waqaf',
+          title: 'Tanda Waqaf La: Dilarang Berhenti',
+          detail: 'Jangan memutus napas di kata ini karena makna ayat belum sempurna. Jika terpaksa berhenti, ulangi bacaan dari kata sebelumnya.'
+        });
+      } else if (word.includes('\u06D8')) {
+        waqafType = 'must';
+        rules.push({
+          type: 'waqaf',
+          title: 'Tanda Waqaf Lazim: Wajib Berhenti',
+          detail: 'Berhenti sejenak di kata ini agar makna ayat tidak berubah, lalu lanjutkan ke kata berikutnya dengan napas baru.'
+        });
+      } else if (word.includes('\u06D7')) {
+        waqafType = 'prefer_stop';
+        rules.push({
+          type: 'waqaf',
+          title: 'Tanda Waqaf Qala: Utama Berhenti',
+          detail: 'Lebih utama berhenti di sini daripada menyambung bacaan, lalu mulai kembali dari kata setelahnya.'
+        });
+      } else if (word.includes('\u06D6')) {
+        waqafType = 'prefer_continue';
+        rules.push({
+          type: 'waqaf',
+          title: 'Tanda Waqaf Shala: Utama Lanjut',
+          detail: 'Lebih utama menyambung bacaan tanpa berhenti, namun tetap diperbolehkan berhenti jika napas tidak sampai.'
+        });
+      } else if (word.includes('\u06DA')) {
+        waqafType = 'jaiz';
+        rules.push({
+          type: 'waqaf',
+          title: 'Tanda Waqaf Jaiz: Boleh Berhenti atau Lanjut',
+          detail: 'Anda bebas berhenti di kata ini atau langsung menyambungnya ke kata berikutnya.'
+        });
+      } else if (word.includes('\u06DB')) {
+        waqafType = 'muanaqah';
+        rules.push({
+          type: 'waqaf',
+          title: 'Tanda Waqaf Muanaqah: Berhenti di Salah Satu Tanda',
+          detail: 'Jika berhenti pada tanda titik tiga pertama, jangan berhenti lagi pada tanda titik tiga kedua.'
+        });
+      } else if (word.includes('\u06DC')) {
+        waqafType = 'saktah';
+        rules.push({
+          type: 'waqaf',
+          title: 'Tanda Saktah: Berhenti Sejenak Tanpa Bernapas',
+          detail: 'Hentikan suara sekitar dua harakat tanpa mengambil napas baru, lalu lanjutkan bacaan.'
+        });
+      } else if (isLastWordOfAyah) {
+        waqafType = 'ayah_end';
+        rules.push({
+          type: 'waqaf',
+          title: 'Akhir Ayat: Berhenti dan Sukunkan Huruf Terakhir',
+          detail: 'Matikan harakat huruf terakhir saat berhenti di akhir ayat, lalu ambil napas sebelum masuk ke ayat berikutnya.'
+        });
+      }
+
+      // 2. Analisis Panjang Pendek Harakat (Hukum Mad)
+      if (word.includes('\u0653')) {
+        primaryTag = 'mad';
+        requiredMinSeconds = 0.65;
+        rules.push({
+          type: 'mad',
+          title: 'Mad Panjang: Dibaca 4 sampai 6 Harakat',
+          detail: 'Terdapat tanda bendera mad di atas huruf. Panjangkan suara dengan stabil sekitar empat hingga lima ketukan.'
+        });
+      } else if (/[\u0670\u06E5\u06E6]/.test(word) || /[\u064E]\u0627|[\u0650]\u064A|[\u064F]\u0648/.test(word)) {
+        primaryTag = 'mad';
+        requiredMinSeconds = 0.35;
+        rules.push({
+          type: 'mad',
+          title: 'Mad Thabii atau Mad Shilah: Dibaca Panjang 2 Harakat',
+          detail: 'Panjangkan bacaan tepat dua ketukan, jangan dipendekkan seperti harakat biasa dan jangan dipanjangkan berlebihan.'
+        });
+      }
+
+      // 3. Analisis Ghunnah (Nun dan Mim Bertasydid)
+      if (/[\u0646\u0645]\u0651/.test(word)) {
+        if (!primaryTag) primaryTag = 'ghunnah';
+        requiredMinSeconds = Math.max(requiredMinSeconds, 0.42);
+        rules.push({
+          type: 'ghunnah',
+          title: 'Ghunnah Musyaddadah: Dengung 2 Harakat',
+          detail: 'Tahan bunyi dengung di pangkal hidung selama dua ketukan pada huruf Nun atau Mim yang bertasydid.'
+        });
+      }
+
+      // 4. Analisis Nun Sukun atau Tanwin
+      const hasNunSukunOrTanwin = /\u0646[\u0652\u06E1]|[\u064B\u064C\u064D]/.test(word);
+      if (hasNunSukunOrTanwin) {
+        const combined = word + ' ' + (nextWord || '');
+        const matchAfter = combined.match(/(?:\u0646[\u0652\u06E1]|[\u064B\u064C\u064D])[^\u0621-\u064A]*([\u0621-\u064A])/);
+        if (matchAfter) {
+          const nextChar = matchAfter[1];
+          if (/[\u0621\u0647\u0639\u062D\u063A\u062E]/.test(nextChar)) {
+            rules.push({
+              type: 'tajwid',
+              title: 'Idzhar Halqi: Dibaca Jelas Tanpa Dengung',
+              detail: 'Bunyi Nun sukun atau tanwin bertemu huruf tenggorokan sehingga harus dibaca jelas dan tidak ditahan.'
+            });
+          } else if (/[\u064A\u0646\u0645\u0648]/.test(nextChar)) {
+            if (!primaryTag) primaryTag = 'ghunnah';
+            rules.push({
+              type: 'ghunnah',
+              title: 'Idgham Bighunnah: Lebur Disertai Dengung',
+              detail: 'Masukkan bunyi Nun sukun atau tanwin ke huruf berikutnya disertai dengung dua harakat.'
+            });
+          } else if (/[\u0644\u0631]/.test(nextChar)) {
+            rules.push({
+              type: 'tajwid',
+              title: 'Idgham Bilaghunnah: Lebur Tanpa Dengung',
+              detail: 'Masukkan bunyi Nun sukun atau tanwin langsung ke huruf Lam atau Ra tanpa dengung.'
+            });
+          } else if (nextChar === '\u0628') {
+            if (!primaryTag) primaryTag = 'ghunnah';
+            rules.push({
+              type: 'ghunnah',
+              title: 'Iqlab: Ubah Menjadi Bunyi Mim Berdengung',
+              detail: 'Ubah bunyi Nun sukun atau tanwin menjadi Mim ringan dengan bibir merapat lembut disertai dengung.'
+            });
+          } else {
+            if (!primaryTag) primaryTag = 'ghunnah';
+            rules.push({
+              type: 'ghunnah',
+              title: 'Ikhfa Haqiqi: Samar Disertai Dengung',
+              detail: 'Samarkan bunyi Nun sukun atau tanwin di antara Idzhar dan Idgham dengan dengung dua harakat.'
+            });
+          }
+        }
+      }
+
+      // 5. Analisis Mim Sukun
+      if (/\u0645[\u0652\u06E1]/.test(word)) {
+        const combined = word + ' ' + (nextWord || '');
+        const matchMim = combined.match(/\u0645[\u0652\u06E1][^\u0621-\u064A]*([\u0621-\u064A])/);
+        if (matchMim) {
+          const afterMim = matchMim[1];
+          if (afterMim === '\u0628') {
+            if (!primaryTag) primaryTag = 'ghunnah';
+            rules.push({
+              type: 'ghunnah',
+              title: 'Ikhfa Syafawi: Samarkan Mim Sukun',
+              detail: 'Samarkan bunyi Mim sukun saat bertemu huruf Ba disertai dengung dua harakat.'
+            });
+          } else if (afterMim === '\u0645') {
+            if (!primaryTag) primaryTag = 'ghunnah';
+            rules.push({
+              type: 'ghunnah',
+              title: 'Idgham Mimi: Leburkan Mim dengan Dengung',
+              detail: 'Gabungkan Mim sukun ke huruf Mim berikutnya disertai dengung dua harakat.'
+            });
+          } else {
+            rules.push({
+              type: 'tajwid',
+              title: 'Idzhar Syafawi: Mim Sukun Dibaca Jelas',
+              detail: 'Rapatkan bibir dengan jelas saat mengucapkan Mim sukun tanpa menahan dengung.'
+            });
+          }
+        }
+      }
+
+      // 6. Analisis Qalqalah
+      if (/[\u0628\u062C\u062F\u0637\u0642][\u0652\u06E1]/.test(word)) {
+        if (!primaryTag) primaryTag = 'qalqalah';
+        rules.push({
+          type: 'qalqalah',
+          title: 'Qalqalah Sughra: Pantulan Suara Ringan',
+          detail: 'Pantulkan makhraj huruf Ba, Jim, Dal, Tha, atau Qaf yang bersukun di tengah kata.'
+        });
+      } else if (isLastWordOfAyah && /[\u0628\u062C\u062F\u0637\u0642][^\u0621-\u064A]*$/.test(word)) {
+        if (!primaryTag) primaryTag = 'qalqalah';
+        rules.push({
+          type: 'qalqalah',
+          title: 'Qalqalah Kubra: Pantulan Kuat Saat Berhenti',
+          detail: 'Ketika berhenti di akhir kata ini, huruf terakhir disukunkan dan dipantulkan dengan jelas.'
+        });
+      }
+
+      if (rules.length === 0) {
+        rules.push({
+          type: 'tajwid',
+          title: 'Harakat Dasar: Baca Pendek dan Tegas',
+          detail: 'Ucapkan setiap huruf sesuai makhrajnya dengan tempo satu ketukan cepat tanpa memanjangkan harakat.'
+        });
+      }
+
+      return {
+        rules,
+        primaryTag,
+        requiredMinSeconds,
+        waqafType
+      };
+    }
+
     function getFirstLettersWithHarakat(word, targetBaseLetters) {
       let baseCount = 0;
       let result = '';
       for (let i = 0; i < word.length; i++) {
         const ch = word[i];
-        const isBaseLetter = /[\u0621-\u064A]/.test(ch);
+        const isBaseLetter = /[\u0621-\u064A\u0671]/.test(ch);
         if (isBaseLetter) {
           if (baseCount >= targetBaseLetters) break;
           baseCount++;
@@ -643,19 +1104,25 @@
     function prepareWords() {
       flatWords = [];
       versesData.forEach((v, vIdx) => {
-        const tokens = v.text.split(/\s+/).filter(Boolean);
-        tokens.forEach(tok => {
+        const rawTokens = v.text.split(/\s+/).filter(Boolean);
+        const validTokens = rawTokens.filter(tok => normalizeArabic(tok).length > 0);
+
+        validTokens.forEach((tok, tIdx) => {
           const norm = normalizeArabic(tok);
-          if (norm.length > 0) {
-            flatWords.push({
-              verseIdx: vIdx,
-              verseNum: v.number,
-              display: tok,
-              norm: norm,
-              status: 'pending',
-              hintText: ''
-            });
-          }
+          const nextTok = validTokens[tIdx + 1] || (versesData[vIdx + 1] ? versesData[vIdx + 1].text.split(/\s+/)[0] : '');
+          const isLastWordOfAyah = (tIdx === validTokens.length - 1);
+          const analysis = analyzeWordTajwid(tok, nextTok, isLastWordOfAyah);
+
+          flatWords.push({
+            verseIdx: vIdx,
+            verseNum: v.number,
+            display: tok,
+            norm: norm,
+            status: 'pending',
+            hintText: '',
+            errorNote: '',
+            analysis: analysis
+          });
         });
       });
 
@@ -664,6 +1131,10 @@
       totalHintsUsed = 0;
       updateStats();
       renderStage();
+
+      if (appMode === 'mengaji' && flatWords.length > 0) {
+        inspectWord(0, false);
+      }
     }
 
     function renderStage() {
@@ -671,27 +1142,52 @@
       if (flatWords.length === 0) return;
 
       const maskMode = document.getElementById('maskMode').value;
+      const showTajwid = document.getElementById('tajwidHighlight').value === 'on';
       stage.innerHTML = '';
 
       versesData.forEach((v, vIdx) => {
         const block = document.createElement('div');
         block.className = 'ayat-block';
 
-        const wordsInVerse = flatWords.filter(w => w.verseIdx === vIdx);
-        wordsInVerse.forEach(w => {
+        flatWords.forEach((w, globalIdx) => {
+          if (w.verseIdx !== vIdx) return;
+
           const span = document.createElement('span');
           span.className = 'word';
+          span.onclick = () => inspectWord(globalIdx, true);
 
-          if (w.status === 'matched') {
-            span.classList.add('matched-word');
+          if (appMode === 'mengaji') {
             span.textContent = w.display;
-          } else if (w.status === 'hint') {
-            span.classList.add('hint-word');
-            span.textContent = w.hintText;
+
+            if (globalIdx === currentWordIdx && isListening) {
+              span.classList.add('active-cursor');
+            }
+
+            if (showTajwid && w.status === 'pending') {
+              if (w.analysis.primaryTag === 'mad') span.classList.add('tajwid-mad');
+              if (w.analysis.primaryTag === 'ghunnah') span.classList.add('tajwid-ghunnah');
+              if (w.analysis.primaryTag === 'qalqalah') span.classList.add('tajwid-qalqalah');
+              if (w.analysis.waqafType !== 'none') span.classList.add('tajwid-waqaf');
+            }
+
+            if (w.status === 'matched') {
+              span.classList.add('matched-word');
+            } else if (w.status === 'wrong') {
+              span.classList.add('wrong-word');
+            }
           } else {
-            span.classList.add(maskMode === 'hidden' ? 'hidden-word' : 'blurred-word');
-            span.textContent = w.display;
+            if (w.status === 'matched') {
+              span.classList.add('matched-word');
+              span.textContent = w.display;
+            } else if (w.status === 'hint') {
+              span.classList.add('hint-word');
+              span.textContent = w.hintText;
+            } else {
+              span.classList.add(maskMode === 'hidden' ? 'hidden-word' : 'blurred-word');
+              span.textContent = w.display;
+            }
           }
+
           block.appendChild(span);
         });
 
@@ -704,13 +1200,77 @@
       });
     }
 
+    function inspectWord(idx, speakIt) {
+      if (idx < 0 || idx >= flatWords.length) return;
+      if (appMode === 'tahfiz' && flatWords[idx].status === 'pending') return;
+
+      selectedWordIdx = idx;
+      const w = flatWords[idx];
+      const panel = document.getElementById('correctionPanel');
+      const list = document.getElementById('correctionRulesList');
+
+      panel.classList.remove('hidden', 'alert-error', 'alert-info');
+      document.getElementById('correctionWordArabic').textContent = w.display;
+      list.innerHTML = '';
+
+      if (w.status === 'wrong' && w.errorNote) {
+        panel.classList.add('alert-error');
+        document.getElementById('correctionTitle').textContent = 'Koreksi Bacaan Diperlukan';
+        document.getElementById('correctionSubtitle').textContent = 'Perhatikan catatan kesalahan di bawah lalu ulangi bacaan kata ini';
+
+        const errLi = document.createElement('li');
+        errLi.className = 'rule-item rule-warn';
+        errLi.innerHTML = `<strong>Kesalahan Terdeteksi:</strong> ${w.errorNote}`;
+        list.appendChild(errLi);
+      } else {
+        panel.classList.add('alert-info');
+        document.getElementById('correctionTitle').textContent = 'Panduan Tajwid, Panjang Pendek & Waqaf';
+        document.getElementById('correctionSubtitle').textContent = `Ayat ke-${w.verseNum}`;
+      }
+
+      w.analysis.rules.forEach(r => {
+        const li = document.createElement('li');
+        li.className = 'rule-item';
+        if (r.type === 'mad') li.classList.add('rule-mad');
+        if (r.type === 'waqaf') li.classList.add('rule-waqaf');
+        li.innerHTML = `<strong>${r.title}:</strong> ${r.detail}`;
+        list.appendChild(li);
+      });
+
+      if (speakIt && document.getElementById('voiceCorrection').value === 'on') {
+        speakArabic(w.display);
+      }
+    }
+
+    function speakSelectedWord() {
+      if (selectedWordIdx >= 0 && selectedWordIdx < flatWords.length) {
+        speakArabic(flatWords[selectedWordIdx].display);
+      }
+    }
+
+    function markSelectedWord(newStatus) {
+      if (selectedWordIdx < 0 || selectedWordIdx >= flatWords.length) return;
+      flatWords[selectedWordIdx].status = newStatus;
+      if (newStatus === 'matched') {
+        flatWords[selectedWordIdx].errorNote = '';
+        if (selectedWordIdx === currentWordIdx) {
+          currentWordIdx++;
+        }
+      } else if (newStatus === 'wrong' && !flatWords[selectedWordIdx].errorNote) {
+        flatWords[selectedWordIdx].errorNote = 'Ditandai perlu perbaikan pada pengucapan huruf atau panjang harakat.';
+      }
+      updateStats();
+      renderStage();
+      inspectWord(selectedWordIdx, false);
+    }
+
     function startRecitation() {
       if (!SpeechRecognitionAPI) {
-        alert('Peramban tidak mendukung pengenalan suara. Gunakan Google Chrome pada ponsel Anda.');
+        alert('Peramban tidak mendukung pengenalan suara. Gunakan Safari atau Google Chrome pada ponsel Anda.');
         return;
       }
       if (flatWords.length === 0) {
-        alert('Muat ayat terlebih dahulu sebelum memulai setoran.');
+        alert('Muat ayat terlebih dahulu sebelum memulai.');
         return;
       }
       if (currentWordIdx >= flatWords.length) {
@@ -719,10 +1279,13 @@
 
       isListening = true;
       lastSpeechTime = Date.now();
+      lastWordMatchedTime = Date.now();
       requestWakeLock();
+
       document.getElementById('btnStart').classList.add('hidden');
       document.getElementById('btnStop').classList.remove('hidden');
-      setStatus('listening', 'Mendengarkan bacaan anak...');
+      setStatus('listening', appMode === 'mengaji' ? 'Menyimak bacaan & tajwid...' : 'Mendengarkan hafalan anak...');
+      renderStage();
 
       initRecognition();
       startSilenceMonitor();
@@ -740,7 +1303,8 @@
       }
       document.getElementById('btnStart').classList.remove('hidden');
       document.getElementById('btnStop').classList.add('hidden');
-      setStatus('idle', 'Setoran dijeda');
+      setStatus('idle', 'Dijeda');
+      renderStage();
     }
 
     function initRecognition() {
@@ -751,8 +1315,9 @@
 
       recognition.onresult = (event) => {
         if (!isListening) return;
-        lastSpeechTime = Date.now();
-        setStatus('listening', 'Mendengarkan bacaan anak...');
+        const now = Date.now();
+        const pauseBeforeSpeech = (now - lastSpeechTime) / 1000;
+        lastSpeechTime = now;
 
         let fullTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -762,7 +1327,11 @@
         const cleaned = fullTranscript.trim();
         if (cleaned) {
           document.getElementById('liveSpeech').textContent = cleaned;
-          processSpokenText(cleaned);
+          if (appMode === 'mengaji') {
+            processMengajiSpeech(cleaned, pauseBeforeSpeech);
+          } else {
+            processTahfizSpeech(cleaned);
+          }
         }
       };
 
@@ -772,7 +1341,7 @@
 
       recognition.onerror = (event) => {
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          alert('Akses mikrofon diblokir oleh peramban. Pastikan berkas dibuka melalui Google Chrome atau melalui tautan HTTPS.');
+          alert('Akses mikrofon diblokir. Pastikan halaman dibuka lewat tautan HTTPS dan izin mikrofon diaktifkan.');
           stopRecitation();
         }
       };
@@ -788,7 +1357,87 @@
       } catch (e) {}
     }
 
-    function processSpokenText(transcript) {
+    function processMengajiSpeech(transcript, pauseBeforeSpeech) {
+      const spokenTokens = normalizeArabic(transcript).split(/\s+/).filter(Boolean);
+      if (spokenTokens.length === 0) return;
+
+      const strictness = document.getElementById('strictMad').value;
+      const madMultiplier = strictness === 'strict' ? 1.15 : (strictness === 'relaxed' ? 0.55 : 0.85);
+
+      spokenTokens.forEach(spoken => {
+        if (currentWordIdx >= flatWords.length) return;
+
+        const currentObj = flatWords[currentWordIdx];
+        const prevObj = currentWordIdx > 0 ? flatWords[currentWordIdx - 1] : null;
+        const elapsedSinceLastWord = (Date.now() - lastWordMatchedTime) / 1000;
+
+        // Cek kecocokan dengan kata saat ini
+        if (isWordMatch(spoken, currentObj.norm)) {
+          let errorReason = '';
+
+          // Cek aturan Waqaf Mamnu pada kata sebelumnya
+          if (prevObj && prevObj.analysis.waqafType === 'forbid' && pauseBeforeSpeech > 2.2) {
+            errorReason = 'Anda berhenti cukup lama setelah tanda Waqaf La pada kata sebelumnya. Seharusnya bacaan disambung tanpa berhenti.';
+          }
+
+          // Cek panjang pendek Mad pada kata saat ini
+          if (!errorReason && currentObj.analysis.primaryTag === 'mad' && currentWordIdx > 0) {
+            const minRequired = currentObj.analysis.requiredMinSeconds * madMultiplier;
+            if (elapsedSinceLastWord < minRequired) {
+              errorReason = 'Bacaan Mad terlalu cepat sehingga panjang harakat belum terpenuhi. Panjangkan sesuai ketukan yang dianjurkan.';
+            }
+          }
+
+          if (errorReason) {
+            currentObj.status = 'wrong';
+            currentObj.errorNote = errorReason;
+            setStatus('error', 'Perhatikan panjang harakat atau tanda waqaf');
+            inspectWord(currentWordIdx, false);
+          } else {
+            currentObj.status = 'matched';
+            currentObj.errorNote = '';
+            setStatus('listening', 'Bacaan tepat, lanjutkan...');
+          }
+
+          lastWordMatchedTime = Date.now();
+          currentWordIdx++;
+          updateStats();
+          renderStage();
+          checkCompletion();
+          return;
+        }
+
+        // Cek apakah pembaca melompati kata saat ini dan langsung membaca kata berikutnya
+        if (currentWordIdx + 1 < flatWords.length) {
+          const nextObj = flatWords[currentWordIdx + 1];
+          if (isWordMatch(spoken, nextObj.norm)) {
+            currentObj.status = 'wrong';
+            currentObj.errorNote = 'Kata ini terlewat atau pelafalan huruf dan harakatnya tidak sesuai dengan teks ayat.';
+            nextObj.status = 'matched';
+            nextObj.errorNote = '';
+
+            setStatus('error', 'Ada kata terlewat atau kurang tepat');
+            inspectWord(currentWordIdx, true);
+
+            lastWordMatchedTime = Date.now();
+            currentWordIdx += 2;
+            updateStats();
+            renderStage();
+            checkCompletion();
+          }
+        }
+      });
+    }
+
+    function checkCompletion() {
+      if (currentWordIdx >= flatWords.length) {
+        setStatus('idle', 'Alhamdulillah! Seluruh ayat telah selesai dibaca.');
+        speakArabic('أَحْسَنْتَ');
+        stopRecitation();
+      }
+    }
+
+    function processTahfizSpeech(transcript) {
       const spokenTokens = normalizeArabic(transcript).split(/\s+/).filter(Boolean);
       if (spokenTokens.length === 0) return;
 
@@ -818,21 +1467,45 @@
         lastSpeechTime = Date.now();
         updateStats();
         renderStage();
-
-        if (currentWordIdx >= flatWords.length) {
-          setStatus('idle', 'Alhamdulillah! Setoran selesai.');
-          speakArabic('أَحْسَنْتَ');
-          stopRecitation();
-        }
+        checkCompletion();
       }
     }
 
     function isWordMatch(spoken, target) {
       if (spoken === target) return true;
+
+      const sNoAlif = spoken.replace(/ا/g, '');
+      const tNoAlif = target.replace(/ا/g, '');
+      if (sNoAlif.length >= 2 && sNoAlif === tNoAlif) return true;
+
       if (target.length >= 3 && (spoken.includes(target) || target.includes(spoken))) {
         return Math.abs(spoken.length - target.length) <= 2;
       }
+
+      const dist = levenshtein(spoken, target);
+      const maxLen = Math.max(spoken.length, target.length);
+      if (maxLen >= 3 && (1 - dist / maxLen) >= 0.72) {
+        return true;
+      }
+
       return false;
+    }
+
+    function levenshtein(a, b) {
+      const matrix = Array.from({ length: a.length + 1 }, () => []);
+      for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+      for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+      for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j - 1] + cost
+          );
+        }
+      }
+      return matrix[a.length][b.length];
     }
 
     function startSilenceMonitor() {
@@ -840,12 +1513,25 @@
       silenceTimer = setInterval(() => {
         if (!isListening || currentWordIdx >= flatWords.length) return;
 
-        const timeoutSec = parseInt(document.getElementById('pauseTimeout').value, 10) || 4;
-        const elapsedSec = (Date.now() - lastSpeechTime) / 1000;
+        if (appMode === 'tahfiz') {
+          const timeoutSec = parseInt(document.getElementById('pauseTimeout').value, 10) || 4;
+          const elapsedSec = (Date.now() - lastSpeechTime) / 1000;
 
-        if (elapsedSec >= timeoutSec) {
-          giveTalqinHint();
-          lastSpeechTime = Date.now();
+          if (elapsedSec >= timeoutSec) {
+            giveTalqinHint();
+            lastSpeechTime = Date.now();
+          }
+        } else if (appMode === 'mengaji') {
+          const elapsedSec = (Date.now() - lastSpeechTime) / 1000;
+          const prevObj = currentWordIdx > 0 ? flatWords[currentWordIdx - 1] : null;
+          if (prevObj && prevObj.analysis.waqafType === 'forbid' && elapsedSec >= 2.5 && prevObj.status !== 'wrong') {
+            prevObj.status = 'wrong';
+            prevObj.errorNote = 'Tanda Waqaf La melarang berhenti di kata ini. Ulangi bacaan dari kata sebelumnya dan langsung sambung.';
+            setStatus('error', 'Jangan berhenti di tanda Waqaf La');
+            inspectWord(currentWordIdx - 1, false);
+            updateStats();
+            renderStage();
+          }
         }
       }, 400);
     }
@@ -891,7 +1577,7 @@
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'ar-SA';
-      utterance.rate = 0.85;
+      utterance.rate = 0.82;
       window.speechSynthesis.speak(utterance);
     }
 
@@ -900,6 +1586,7 @@
       flatWords.forEach(w => {
         w.status = 'pending';
         w.hintText = '';
+        w.errorNote = '';
       });
       currentWordIdx = 0;
       currentHintLevel = 0;
@@ -908,11 +1595,20 @@
       setStatus('idle', 'Siap menyimak');
       updateStats();
       renderStage();
+
+      if (appMode === 'mengaji' && flatWords.length > 0) {
+        inspectWord(0, false);
+      }
     }
 
     function updateStats() {
-      document.getElementById('progressCount').textContent = `${currentWordIdx} / ${flatWords.length}`;
+      const correct = flatWords.filter(w => w.status === 'matched').length;
+      const wrong = flatWords.filter(w => w.status === 'wrong').length;
+
+      document.getElementById('correctCount').textContent = correct;
+      document.getElementById('wrongCount').textContent = wrong;
       document.getElementById('hintCount').textContent = totalHintsUsed;
+      document.getElementById('totalWordsCount').textContent = flatWords.length;
     }
 
     function setStatus(type, text) {
@@ -920,6 +1616,7 @@
       badge.className = 'status-badge';
       if (type === 'listening') badge.classList.add('listening');
       if (type === 'hinting') badge.classList.add('hinting');
+      if (type === 'error') badge.classList.add('error-state');
       document.getElementById('statusText').textContent = text;
     }
   </script>
