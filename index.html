@@ -1706,7 +1706,7 @@
     function initRecognition() {
       recognition = new SpeechRecognitionAPI();
       recognition.lang = recognitionLang;
-      recognition.continuous = !isIOSDevice;
+      recognition.continuous = false;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
@@ -1776,6 +1776,7 @@
       recognition.onerror = (event) => {
         const errCode = event.error || 'unknown';
         if (errCode === 'no-speech') {
+          document.getElementById('engineStatusText').textContent = 'Status pengenal Arab: Suara belum terdengar jelas oleh mikrofon laptop...';
           return;
         }
 
@@ -1816,6 +1817,39 @@
       }
     }
 
+    function findRewindAnchor(spoken, currIdx) {
+      for (let idx = 0; idx < currIdx; idx++) {
+        const isStartOfAyah = (idx === 0) || (flatWords[idx].verseIdx !== flatWords[idx - 1].verseIdx);
+        const prevWaqaf = idx > 0 ? flatWords[idx - 1].analysis.waqafType : 'none';
+        const isAfterWaqaf = prevWaqaf !== 'none' && prevWaqaf !== 'forbid';
+        const isStartOfWrong = flatWords[idx].status === 'wrong' && (idx === 0 || flatWords[idx - 1].status === 'matched');
+
+        if (!isStartOfAyah && !isAfterWaqaf && !isStartOfWrong) continue;
+
+        let hasWrongFromAnchor = false;
+        for (let k = idx; k < currIdx; k++) {
+          if (flatWords[k].status === 'wrong') {
+            hasWrongFromAnchor = true;
+            break;
+          }
+        }
+
+        if (hasWrongFromAnchor && isWordMatch(spoken, flatWords[idx].norm)) {
+          return idx;
+        }
+      }
+      return -1;
+    }
+
+    function rewindToAnchor(anchorIdx, currIdx) {
+      for (let k = anchorIdx; k < currIdx; k++) {
+        flatWords[k].status = 'pending';
+        flatWords[k].errorNote = '';
+      }
+      currentWordIdx = anchorIdx;
+      document.getElementById('engineStatusText').textContent = 'Mengulang pengecekan dari awal ayat / pemberhentian...';
+    }
+
     function processMengajiStream(resultIdx, tokens, isFinal, pauseBeforeSpeech) {
       let startTok = committedPerResult[resultIdx] || 0;
 
@@ -1828,6 +1862,28 @@
         const batchSize = tokens.length - startTok;
 
         if (currentWordIdx === 0 && INTRO_IGNORE_TOKENS.has(spoken) && !isWordMatch(spoken, flatWords[0].norm)) {
+          committedPerResult[resultIdx] = t + 1;
+          document.getElementById('engineStatusText').textContent = 'Membaca Ta\'awudz / Basmalah, menunggu awal ayat...';
+          continue;
+        }
+
+        // Cek apakah pelajar mengulang dari awal ayat, setelah waqaf, atau kata yang merah
+        if (appMode === 'mengaji' && currentWordIdx > 0 && !isWordMatch(spoken, flatWords[currentWordIdx].norm)) {
+          const anchorIdx = findRewindAnchor(spoken, currentWordIdx);
+          if (anchorIdx !== -1) {
+            clearTrailingTimer();
+            rewindToAnchor(anchorIdx, currentWordIdx);
+            evaluateMatchedWord(currentWordIdx, pauseBeforeSpeech, false);
+            currentWordIdx++;
+            committedPerResult[resultIdx] = t + 1;
+            updateStats();
+            updateWordVisuals();
+            if (checkMengajiCompletion()) return;
+            continue;
+          }
+        }
+
+        if (isWordMatch(spoken, flatWords[currentWordIdx].norm)) {
           committedPerResult[resultIdx] = t + 1;
           document.getElementById('engineStatusText').textContent = 'Membaca Ta\'awudz / Basmalah, menunggu awal ayat...';
           continue;
