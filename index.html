@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asisten Setoran Tahfiz Anak</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0f766e;
+      --primary-dark: #115e59;
+      --primary-light: #ccfbf1;
+      --accent: #d97706;
+      --accent-light: #fef3c7;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --success: #15803d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 12px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+      padding: 18px 16px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(15, 118, 110, 0.15);
+    }
+
+    header h1 {
+      font-size: 1.35rem;
+      margin-bottom: 4px;
+    }
+
+    header p {
+      font-size: 0.88rem;
+      opacity: 0.92;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .grid-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.84rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    select, input[type="number"], textarea {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      background: white;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 36px;
+    }
+
+    textarea {
+      font-family: 'Amiri', serif;
+      font-size: 1.4rem;
+      direction: rtl;
+      min-height: 110px;
+    }
+
+    .settings-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+      min-height: 46px;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+      border: none;
+      min-height: 46px;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      min-height: 44px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .action-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .button-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+
+    .status-badge.listening {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border-color: var(--primary);
+    }
+
+    .status-badge.hinting {
+      background: var(--accent-light);
+      color: #92400e;
+      border-color: var(--accent);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .listening .dot {
+      background: var(--primary);
+      animation: pulse 1.2s infinite;
+    }
+
+    .hinting .dot {
+      background: var(--accent);
+      animation: pulse 0.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.7; }
+      50% { transform: scale(1.25); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.7; }
+    }
+
+    .ayat-stage {
+      background: #fffbeb;
+      border: 2px solid #fde68a;
+      border-radius: 16px;
+      padding: 20px 16px;
+      min-height: 200px;
+      direction: rtl;
+      text-align: right;
+      font-family: 'Amiri', serif;
+      font-size: 2.1rem;
+      line-height: 2.3;
+      word-wrap: break-word;
+    }
+
+    @media (max-width: 600px) {
+      .ayat-stage {
+        font-size: 1.85rem;
+        line-height: 2.2;
+        padding: 16px 12px;
+      }
+    }
+
+    .ayat-block {
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed #fcd34d;
+    }
+
+    .ayat-block:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .word {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      transition: all 0.25s ease;
+    }
+
+    .word.hidden-word {
+      color: transparent;
+      background: #fef3c7;
+      border-bottom: 2px dashed #d97706;
+      user-select: none;
+    }
+
+    .word.blurred-word {
+      filter: blur(7px);
+      opacity: 0.45;
+      user-select: none;
+    }
+
+    .word.hint-word {
+      color: #b45309;
+      background: #fde68a;
+      border-bottom: 3px solid var(--accent);
+      filter: none;
+      opacity: 1;
+      transform: scale(1.04);
+    }
+
+    .word.matched-word {
+      color: var(--success);
+      background: #dcfce7;
+      filter: none;
+      opacity: 1;
+    }
+
+    .ayah-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      color: var(--primary-dark);
+      background: var(--primary-light);
+      border: 1px solid var(--primary);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      margin: 0 6px;
+      vertical-align: middle;
+    }
+
+    .transcript-box {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: var(--bg);
+      border-radius: 10px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .arabic-live {
+      font-family: 'Amiri', serif;
+      font-size: 1.3rem;
+      color: var(--text);
+      direction: rtl;
+      display: inline-block;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .warning-banner {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Asisten Setoran Tahfiz Al-Qur'an</h1>
+      <p>Menyimak bacaan anak dan memancing huruf awal saat anak terdiam lupa</p>
+    </header>
+
+    <div id="browserWarning" class="warning-banner hidden">
+      Peramban ponsel ini belum mendukung pengenalan suara otomatis. Buka berkas ini menggunakan Google Chrome versi terbaru dan pastikan izin mikrofon aktif.
+    </div>
+
+    <div class="card">
+      <div class="tabs">
+        <button class="tab-btn active" id="tabApi" onclick="switchSource('api')">Pilih Surah</button>
+        <button class="tab-btn" id="tabManual" onclick="switchSource('manual')">Tempel Teks Manual</button>
+      </div>
+
+      <div id="panelApi">
+        <div class="grid-controls">
+          <div style="grid-column: 1 / -1;">
+            <label for="surahSelect">Pilih Surah</label>
+            <select id="surahSelect" onchange="onSurahChange()">
+              <option value="">Memuat daftar surah...</option>
+            </select>
+          </div>
+          <div>
+            <label for="startAyah">Dari Ayat</label>
+            <input type="number" id="startAyah" min="1" value="1">
+          </div>
+          <div>
+            <label for="endAyah">Sampai Ayat</label>
+            <input type="number" id="endAyah" min="1" value="5">
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <button class="btn-primary" style="width:100%;" onclick="loadSurahVerses()">Muat Ayat</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="panelManual" class="hidden">
+        <label for="manualInput">Masukkan Teks Arab berharakat</label>
+        <textarea id="manualInput" placeholder="Tempel teks ayat di sini, pisahkan tiap ayat dengan baris baru..."></textarea>
+        <div style="margin-top:10px;">
+          <button class="btn-primary" style="width:100%;" onclick="loadManualVerses()">Gunakan Teks Ini</button>
+        </div>
+      </div>
+
+      <div class="settings-bar">
+        <div>
+          <label for="pauseTimeout">Batas Waktu Diam: <span id="pauseVal">4</span> detik</label>
+          <input type="range" id="pauseTimeout" min="2" max="10" value="4" oninput="document.getElementById('pauseVal').textContent = this.value">
+        </div>
+        <div>
+          <label for="hintMode">Bentuk Pancingan Saat Lupa</label>
+          <select id="hintMode">
+            <option value="letters">Beberapa Huruf Awal Kata</option>
+            <option value="word">Satu Kata Penuh</option>
+          </select>
+        </div>
+        <div>
+          <label for="maskMode">Tampilan Ayat Sebelum Dibaca</label>
+          <select id="maskMode" onchange="renderStage()">
+            <option value="hidden">Tertutup Penuh</option>
+            <option value="blurred">Samar</option>
+          </select>
+        </div>
+        <div>
+          <label for="voiceAssist">Suara Pemancing Otomatis</label>
+          <select id="voiceAssist">
+            <option value="on">Aktif</option>
+            <option value="off">Nonaktif</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="action-row">
+        <div id="statusBadge" class="status-badge">
+          <span class="dot"></span>
+          <span id="statusText">Siap menyimak</span>
+        </div>
+        <div class="button-group">
+          <button id="btnStart" class="btn-primary" onclick="startRecitation()">Mulai Setoran</button>
+          <button id="btnStop" class="btn-danger hidden" onclick="stopRecitation()">Berhenti</button>
+          <button class="btn-secondary" onclick="triggerManualHint()">Pancing Sekarang</button>
+          <button class="btn-secondary" onclick="resetProgress()">Ulangi Awal</button>
+        </div>
+      </div>
+
+      <div id="ayatStage" class="ayat-stage">
+        <div style="text-align:center; color:#92400e; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.95rem;">
+          Pilih surah dan rentang ayat di atas, lalu tekan tombol <strong>Muat Ayat</strong> untuk memulai.
+        </div>
+      </div>
+
+      <div class="transcript-box">
+        <div>
+          <strong>Terdeteksi Mikrofon:</strong>
+          <span id="liveSpeech" class="arabic-live">-</span>
+        </div>
+        <div class="stats-row">
+          <span class="stat-pill">Kemajuan: <span id="progressCount">0 / 0</span> kata</span>
+          <span class="stat-pill" style="background:#fef3c7; color:#92400e;">Bantuan: <span id="hintCount">0</span> kali</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let versesData = [];
+    let flatWords = [];
+    let currentWordIdx = 0;
+    let isListening = false;
+    let recognition = null;
+    let lastSpeechTime = Date.now();
+    let silenceTimer = null;
+    let currentHintLevel = 0;
+    let totalHintsUsed = 0;
+    let surahListCache = [];
+    let wakeLock = null;
+
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!SpeechRecognitionAPI) {
+        document.getElementById('browserWarning').classList.remove('hidden');
+      }
+      fetchSurahList();
+    });
+
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {}
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock !== null) {
+        wakeLock.release().then(() => { wakeLock = null; }).catch(() => {});
+      }
+    }
+
+    function switchSource(mode) {
+      document.getElementById('tabApi').classList.toggle('active', mode === 'api');
+      document.getElementById('tabManual').classList.toggle('active', mode === 'manual');
+      document.getElementById('panelApi').classList.toggle('hidden', mode !== 'api');
+      document.getElementById('panelManual').classList.toggle('hidden', mode !== 'manual');
+    }
+
+    async function fetchSurahList() {
+      const select = document.getElementById('surahSelect');
+      try {
+        const res = await fetch('https://api.alquran.cloud/v1/surah');
+        const json = await res.json();
+        surahListCache = json.data;
+        select.innerHTML = '';
+        surahListCache.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.number;
+          opt.textContent = `${s.number}. ${s.englishName} (${s.name}) - ${s.numberOfAyahs} ayat`;
+          if (s.number === 112) opt.selected = true;
+          select.appendChild(opt);
+        });
+        onSurahChange();
+        loadSurahVerses();
+      } catch (err) {
+        select.innerHTML = '<option value="">Gagal memuat daftar surah</option>';
+      }
+    }
+
+    function onSurahChange() {
+      const num = parseInt(document.getElementById('surahSelect').value, 10);
+      const found = surahListCache.find(s => s.number === num);
+      if (found) {
+        document.getElementById('startAyah').value = 1;
+        document.getElementById('startAyah').max = found.numberOfAyahs;
+        document.getElementById('endAyah').value = Math.min(found.numberOfAyahs, 10);
+        document.getElementById('endAyah').max = found.numberOfAyahs;
+      }
+    }
+
+    async function loadSurahVerses() {
+      stopRecitation();
+      const surahNum = document.getElementById('surahSelect').value;
+      const start = parseInt(document.getElementById('startAyah').value, 10) || 1;
+      const end = parseInt(document.getElementById('endAyah').value, 10) || 1;
+
+      if (!surahNum) return;
+
+      const stage = document.getElementById('ayatStage');
+      stage.innerHTML = '<div style="text-align:center; font-family:sans-serif; font-size:0.95rem;">Mengambil teks ayat...</div>';
+
+      try {
+        const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNum}/quran-simple`);
+        const json = await res.json();
+        const allAyahs = json.data.ayahs;
+
+        const filtered = allAyahs.filter(a => a.numberInSurah >= start && a.numberInSurah <= end);
+        versesData = filtered.map(a => {
+          let txt = a.text.trim();
+          if (surahNum != 1 && surahNum != 9 && a.numberInSurah === 1) {
+            txt = txt.replace(/^بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\s*/, '');
+          }
+          return {
+            number: a.numberInSurah,
+            text: txt
+          };
+        });
+
+        prepareWords();
+      } catch (err) {
+        stage.innerHTML = '<div style="text-align:center; color:#dc2626; font-family:sans-serif; font-size:0.95rem;">Gagal memuat ayat. Periksa sambungan internet atau gunakan tab Tempel Teks Manual.</div>';
+      }
+    }
+
+    function loadManualVerses() {
+      stopRecitation();
+      const raw = document.getElementById('manualInput').value.trim();
+      if (!raw) return;
+      const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean);
+      versesData = lines.map((line, i) => ({
+        number: i + 1,
+        text: line
+      }));
+      prepareWords();
+    }
+
+    function normalizeArabic(str) {
+      return str
+        .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '')
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/ى/g, 'ي')
+        .replace(/ة/g, 'ه')
+        .replace(/[^\u0621-\u064A\s]/g, '')
+        .trim();
+    }
+
+    function getFirstLettersWithHarakat(word, targetBaseLetters) {
+      let baseCount = 0;
+      let result = '';
+      for (let i = 0; i < word.length; i++) {
+        const ch = word[i];
+        const isBaseLetter = /[\u0621-\u064A]/.test(ch);
+        if (isBaseLetter) {
+          if (baseCount >= targetBaseLetters) break;
+          baseCount++;
+        }
+        result += ch;
+      }
+      return result;
+    }
+
+    function prepareWords() {
+      flatWords = [];
+      versesData.forEach((v, vIdx) => {
+        const tokens = v.text.split(/\s+/).filter(Boolean);
+        tokens.forEach(tok => {
+          const norm = normalizeArabic(tok);
+          if (norm.length > 0) {
+            flatWords.push({
+              verseIdx: vIdx,
+              verseNum: v.number,
+              display: tok,
+              norm: norm,
+              status: 'pending',
+              hintText: ''
+            });
+          }
+        });
+      });
+
+      currentWordIdx = 0;
+      currentHintLevel = 0;
+      totalHintsUsed = 0;
+      updateStats();
+      renderStage();
+    }
+
+    function renderStage() {
+      const stage = document.getElementById('ayatStage');
+      if (flatWords.length === 0) return;
+
+      const maskMode = document.getElementById('maskMode').value;
+      stage.innerHTML = '';
+
+      versesData.forEach((v, vIdx) => {
+        const block = document.createElement('div');
+        block.className = 'ayat-block';
+
+        const wordsInVerse = flatWords.filter(w => w.verseIdx === vIdx);
+        wordsInVerse.forEach(w => {
+          const span = document.createElement('span');
+          span.className = 'word';
+
+          if (w.status === 'matched') {
+            span.classList.add('matched-word');
+            span.textContent = w.display;
+          } else if (w.status === 'hint') {
+            span.classList.add('hint-word');
+            span.textContent = w.hintText;
+          } else {
+            span.classList.add(maskMode === 'hidden' ? 'hidden-word' : 'blurred-word');
+            span.textContent = w.display;
+          }
+          block.appendChild(span);
+        });
+
+        const numBadge = document.createElement('span');
+        numBadge.className = 'ayah-num';
+        numBadge.textContent = v.number;
+        block.appendChild(numBadge);
+
+        stage.appendChild(block);
+      });
+    }
+
+    function startRecitation() {
+      if (!SpeechRecognitionAPI) {
+        alert('Peramban tidak mendukung pengenalan suara. Gunakan Google Chrome pada ponsel Anda.');
+        return;
+      }
+      if (flatWords.length === 0) {
+        alert('Muat ayat terlebih dahulu sebelum memulai setoran.');
+        return;
+      }
+      if (currentWordIdx >= flatWords.length) {
+        resetProgress();
+      }
+
+      isListening = true;
+      lastSpeechTime = Date.now();
+      requestWakeLock();
+      document.getElementById('btnStart').classList.add('hidden');
+      document.getElementById('btnStop').classList.remove('hidden');
+      setStatus('listening', 'Mendengarkan bacaan anak...');
+
+      initRecognition();
+      startSilenceMonitor();
+    }
+
+    function stopRecitation() {
+      isListening = false;
+      releaseWakeLock();
+      if (recognition) {
+        try { recognition.stop(); } catch (e) {}
+      }
+      if (silenceTimer) {
+        clearInterval(silenceTimer);
+        silenceTimer = null;
+      }
+      document.getElementById('btnStart').classList.remove('hidden');
+      document.getElementById('btnStop').classList.add('hidden');
+      setStatus('idle', 'Setoran dijeda');
+    }
+
+    function initRecognition() {
+      recognition = new SpeechRecognitionAPI();
+      recognition.lang = 'ar-SA';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = (event) => {
+        if (!isListening) return;
+        lastSpeechTime = Date.now();
+        setStatus('listening', 'Mendengarkan bacaan anak...');
+
+        let fullTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          fullTranscript += ' ' + event.results[i][0].transcript;
+        }
+
+        const cleaned = fullTranscript.trim();
+        if (cleaned) {
+          document.getElementById('liveSpeech').textContent = cleaned;
+          processSpokenText(cleaned);
+        }
+      };
+
+      recognition.onspeechstart = () => {
+        lastSpeechTime = Date.now();
+      };
+
+      recognition.onerror = (event) => {
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          alert('Akses mikrofon diblokir oleh peramban. Pastikan berkas dibuka melalui Google Chrome atau melalui tautan HTTPS.');
+          stopRecitation();
+        }
+      };
+
+      recognition.onend = () => {
+        if (isListening) {
+          try { recognition.start(); } catch (e) {}
+        }
+      };
+
+      try {
+        recognition.start();
+      } catch (e) {}
+    }
+
+    function processSpokenText(transcript) {
+      const spokenTokens = normalizeArabic(transcript).split(/\s+/).filter(Boolean);
+      if (spokenTokens.length === 0) return;
+
+      let progressMade = false;
+
+      spokenTokens.forEach(spoken => {
+        if (currentWordIdx >= flatWords.length) return;
+
+        for (let offset = 0; offset <= 1; offset++) {
+          const checkIdx = currentWordIdx + offset;
+          if (checkIdx >= flatWords.length) break;
+
+          const target = flatWords[checkIdx].norm;
+          if (isWordMatch(spoken, target)) {
+            for (let k = currentWordIdx; k <= checkIdx; k++) {
+              flatWords[k].status = 'matched';
+            }
+            currentWordIdx = checkIdx + 1;
+            currentHintLevel = 0;
+            progressMade = true;
+            break;
+          }
+        }
+      });
+
+      if (progressMade) {
+        lastSpeechTime = Date.now();
+        updateStats();
+        renderStage();
+
+        if (currentWordIdx >= flatWords.length) {
+          setStatus('idle', 'Alhamdulillah! Setoran selesai.');
+          speakArabic('أَحْسَنْتَ');
+          stopRecitation();
+        }
+      }
+    }
+
+    function isWordMatch(spoken, target) {
+      if (spoken === target) return true;
+      if (target.length >= 3 && (spoken.includes(target) || target.includes(spoken))) {
+        return Math.abs(spoken.length - target.length) <= 2;
+      }
+      return false;
+    }
+
+    function startSilenceMonitor() {
+      if (silenceTimer) clearInterval(silenceTimer);
+      silenceTimer = setInterval(() => {
+        if (!isListening || currentWordIdx >= flatWords.length) return;
+
+        const timeoutSec = parseInt(document.getElementById('pauseTimeout').value, 10) || 4;
+        const elapsedSec = (Date.now() - lastSpeechTime) / 1000;
+
+        if (elapsedSec >= timeoutSec) {
+          giveTalqinHint();
+          lastSpeechTime = Date.now();
+        }
+      }, 400);
+    }
+
+    function triggerManualHint() {
+      if (flatWords.length === 0 || currentWordIdx >= flatWords.length) return;
+      giveTalqinHint();
+      lastSpeechTime = Date.now();
+    }
+
+    function giveTalqinHint() {
+      if (currentWordIdx >= flatWords.length) return;
+
+      const wordObj = flatWords[currentWordIdx];
+      const hintMode = document.getElementById('hintMode').value;
+
+      currentHintLevel++;
+      totalHintsUsed++;
+      updateStats();
+
+      let snippet = '';
+      if (hintMode === 'letters' && currentHintLevel === 1) {
+        const partial = getFirstLettersWithHarakat(wordObj.display, 3);
+        snippet = partial.length < wordObj.display.length ? partial + 'ـ...' : wordObj.display;
+      } else {
+        snippet = wordObj.display;
+      }
+
+      wordObj.status = 'hint';
+      wordObj.hintText = snippet;
+      renderStage();
+
+      setStatus('hinting', 'Memancing lanjutan ayat...');
+
+      if (document.getElementById('voiceAssist').value === 'on') {
+        const cleanToSpeak = snippet.replace('ـ...', '');
+        speakArabic(cleanToSpeak);
+      }
+    }
+
+    function speakArabic(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ar-SA';
+      utterance.rate = 0.85;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function resetProgress() {
+      stopRecitation();
+      flatWords.forEach(w => {
+        w.status = 'pending';
+        w.hintText = '';
+      });
+      currentWordIdx = 0;
+      currentHintLevel = 0;
+      totalHintsUsed = 0;
+      document.getElementById('liveSpeech').textContent = '-';
+      setStatus('idle', 'Siap menyimak');
+      updateStats();
+      renderStage();
+    }
+
+    function updateStats() {
+      document.getElementById('progressCount').textContent = `${currentWordIdx} / ${flatWords.length}`;
+      document.getElementById('hintCount').textContent = totalHintsUsed;
+    }
+
+    function setStatus(type, text) {
+      const badge = document.getElementById('statusBadge');
+      badge.className = 'status-badge';
+      if (type === 'listening') badge.classList.add('listening');
+      if (type === 'hinting') badge.classList.add('hinting');
+      document.getElementById('statusText').textContent = text;
+    }
+  </script>
+</body>
+</html>
