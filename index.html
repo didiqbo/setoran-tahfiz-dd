@@ -244,7 +244,7 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .button-group {
@@ -278,6 +278,12 @@
       border-color: var(--accent);
     }
 
+    .status-badge.error-state {
+      background: var(--error-bg);
+      color: var(--error);
+      border-color: #fca5a5;
+    }
+
     .dot {
       width: 10px;
       height: 10px;
@@ -296,10 +302,98 @@
       animation: pulse 0.8s infinite;
     }
 
+    .error-state .dot {
+      background: var(--error);
+    }
+
     @keyframes pulse {
       0% { transform: scale(0.95); opacity: 0.7; }
       50% { transform: scale(1.25); opacity: 1; }
       100% { transform: scale(0.95); opacity: 0.7; }
+    }
+
+    /* Kotak Indikator Volume Suara Mikrofon */
+    .mic-monitor-box {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .mic-monitor-box.voice-active {
+      background: #ecfdf5;
+      border-color: #34d399;
+    }
+
+    .mic-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .mic-label-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .mic-signal-pill {
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      background: #e2e8f0;
+      color: #475569;
+    }
+
+    .mic-monitor-box.voice-active .mic-signal-pill {
+      background: #16a34a;
+      color: white;
+    }
+
+    .eq-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 32px;
+      padding: 4px 8px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      flex: 1;
+      min-width: 160px;
+      max-width: 320px;
+    }
+
+    .eq-bar {
+      flex: 1;
+      height: 15%;
+      min-height: 4px;
+      background: #94a3b8;
+      border-radius: 3px;
+      transition: height 0.06s ease, background-color 0.1s ease;
+    }
+
+    .mic-monitor-box.voice-active .eq-bar {
+      background: #16a34a;
+    }
+
+    .mic-diag-text {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
     .legend-bar {
@@ -372,6 +466,7 @@
     .word.active-cursor {
       background: #fef08a;
       border-bottom: 3px solid #ca8a04;
+      box-shadow: 0 0 0 2px #fde047;
     }
 
     .word.tajwid-mad {
@@ -564,7 +659,7 @@
   <div class="container">
     <header>
       <h1>Asisten Belajar Mengaji & Tahfiz</h1>
-      <p>Murottal Qari asli, koreksi tajwid & harakat seketika tanpa jeda, dan setoran hafalan anak</p>
+      <p>Indikator suara langsung, murottal Qari asli, koreksi tajwid & setoran hafalan</p>
     </header>
 
     <div id="browserWarning" class="warning-banner hidden">
@@ -694,6 +789,21 @@
         </div>
       </div>
 
+      <!-- Indikator Volume Suara Mikrofon Naik-Turun -->
+      <div id="micMonitorBox" class="mic-monitor-box">
+        <div class="mic-top-row">
+          <div class="mic-label-group">
+            <span>Volume Suara:</span>
+            <span id="micSignalPill" class="mic-signal-pill">Mikrofon Nonaktif</span>
+          </div>
+          <div id="eqBarsContainer" class="eq-bars" aria-label="Grafik volume mikrofon"></div>
+        </div>
+        <div class="mic-diag-text">
+          <span id="engineStatusText">Pemeriksa bacaan Arab: Belum dimulai</span>
+          <span id="volumePercentText">Level: 0%</span>
+        </div>
+      </div>
+
       <div id="legendMengaji" class="legend-bar">
         <span class="legend-item"><span class="swatch" style="background:#22c55e;"></span> Bacaan Benar</span>
         <span class="legend-item"><span class="swatch" style="background:#ef4444;"></span> Bacaan Salah (Otomatis Lanjut)</span>
@@ -727,7 +837,7 @@
 
       <div class="transcript-box">
         <div>
-          <strong>Terdeteksi Mikrofon:</strong>
+          <strong>Teks Arab Tertangkap:</strong>
           <span id="liveSpeech" class="arabic-live">-</span>
         </div>
         <div class="stats-row">
@@ -754,6 +864,7 @@
     let recognition = null;
     let lastSpeechTime = Date.now();
     let lastWordMatchedTime = Date.now();
+    let lastSpeechEngineActivity = 0;
     let silenceTimer = null;
     let trailingMismatchTimer = null;
     let committedPerResult = {};
@@ -763,15 +874,140 @@
     let wakeLock = null;
     let playlistQueue = [];
 
+    // Variabel pengukur volume mikrofon
+    let audioCtx = null;
+    let micStream = null;
+    let analyserNode = null;
+    let eqBars = [];
+    let meterAnimId = null;
+
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     const audioPlayer = document.getElementById('qariAudioPlayer');
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    const INTRO_IGNORE_TOKENS = new Set([
+      'اعوذ', 'بالله', 'من', 'الشيطان', 'الرجيم', 'بسم', 'الله', 'الرحمن', 'الرحيم'
+    ]);
 
     window.addEventListener('DOMContentLoaded', () => {
+      buildEqualizerBars();
       if (!SpeechRecognitionAPI) {
         document.getElementById('browserWarning').classList.remove('hidden');
       }
       fetchSurahList();
     });
+
+    function buildEqualizerBars() {
+      const container = document.getElementById('eqBarsContainer');
+      container.innerHTML = '';
+      eqBars = [];
+      for (let i = 0; i < 16; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'eq-bar';
+        container.appendChild(bar);
+        eqBars.push(bar);
+      }
+    }
+
+    async function startVolumeMeter() {
+      stopVolumeMeter();
+      const box = document.getElementById('micMonitorBox');
+      const pill = document.getElementById('micSignalPill');
+
+      pill.textContent = 'Menunggu suara...';
+
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          micStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          });
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new AudioContextClass();
+          if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+          }
+          const source = audioCtx.createMediaStreamSource(micStream);
+          analyserNode = audioCtx.createAnalyser();
+          analyserNode.fftSize = 256;
+          analyserNode.smoothingTimeConstant = 0.5;
+          source.connect(analyserNode);
+        }
+      } catch (err) {
+        // Tetap jalankan animasi berbasis deteksi suara pengenalan ucapan jika perangkat membatasi dua jalur audio bersamaan
+        analyserNode = null;
+      }
+
+      const dataArray = analyserNode ? new Uint8Array(analyserNode.frequencyBinCount) : null;
+
+      function renderMeterFrame() {
+        if (!isListening) return;
+
+        let levelPercent = 0;
+
+        if (analyserNode && dataArray) {
+          analyserNode.getByteFrequencyData(dataArray);
+          let sum = 0;
+          const usableBins = Math.min(48, dataArray.length);
+          for (let i = 0; i < usableBins; i++) {
+            sum += dataArray[i];
+          }
+          const avg = sum / usableBins;
+          levelPercent = Math.min(100, Math.round((avg / 140) * 100));
+        }
+
+        // Cadangan visual jika sensor pengenalan ucapan mendeteksi suara namun jalur frekuensi teredam sistem
+        const speechRecent = (Date.now() - lastSpeechEngineActivity) < 450;
+        if (levelPercent < 15 && speechRecent) {
+          levelPercent = 45 + Math.floor(Math.random() * 35);
+        }
+
+        const isVoiceDetected = levelPercent >= 12 || speechRecent;
+        box.classList.toggle('voice-active', isVoiceDetected);
+        pill.textContent = isVoiceDetected ? 'Suara Masuk!' : 'Hening (Belum ada suara)';
+        document.getElementById('volumePercentText').textContent = `Level: ${levelPercent}%`;
+
+        for (let i = 0; i < eqBars.length; i++) {
+          if (!isVoiceDetected) {
+            eqBars[i].style.height = '14%';
+          } else {
+            const wave = Math.sin((Date.now() / 85) + i * 0.65) * 0.35 + 0.65;
+            const jitter = ((i * 17) % 10) / 35;
+            const barHeight = Math.max(18, Math.min(100, Math.round(levelPercent * (wave + jitter))));
+            eqBars[i].style.height = `${barHeight}%`;
+          }
+        }
+
+        meterAnimId = requestAnimationFrame(renderMeterFrame);
+      }
+
+      meterAnimId = requestAnimationFrame(renderMeterFrame);
+    }
+
+    function stopVolumeMeter() {
+      if (meterAnimId) {
+        cancelAnimationFrame(meterAnimId);
+        meterAnimId = null;
+      }
+      if (micStream) {
+        micStream.getTracks().forEach(t => t.stop());
+        micStream = null;
+      }
+      if (audioCtx) {
+        audioCtx.close().catch(() => {});
+        audioCtx = null;
+      }
+      analyserNode = null;
+
+      const box = document.getElementById('micMonitorBox');
+      box.classList.remove('voice-active');
+      document.getElementById('micSignalPill').textContent = 'Mikrofon Nonaktif';
+      document.getElementById('volumePercentText').textContent = 'Level: 0%';
+      eqBars.forEach(bar => { bar.style.height = '14%'; });
+    }
 
     function setAppMode(mode) {
       appMode = mode;
@@ -1285,6 +1521,10 @@
           span.className = cls;
         }
       }
+
+      if (isListening && currentWordIdx < wordElements.length && wordElements[currentWordIdx]) {
+        wordElements[currentWordIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
 
     function playRealQariAudio(primaryUrl, fallbackUrl, onComplete) {
@@ -1466,10 +1706,12 @@
 
       document.getElementById('btnStart').classList.add('hidden');
       document.getElementById('btnStop').classList.remove('hidden');
-      setStatus('listening', appMode === 'mengaji' ? 'Menyimak bacaan seketika (salah ditandai merah & lanjut)...' : 'Mendengarkan hafalan anak...');
+      setStatus('listening', appMode === 'mengaji' ? 'Menyimak bacaan (salah ditandai merah & lanjut)...' : 'Mendengarkan hafalan anak...');
+      document.getElementById('engineStatusText').textContent = 'Pemeriksa bacaan Arab: Siap menerima bacaan...';
       updateWordVisuals();
 
       initRecognition();
+      startVolumeMeter();
       startSilenceMonitor();
     }
 
@@ -1477,6 +1719,7 @@
       isListening = false;
       isPromptingAudio = false;
       clearTrailingTimer();
+      stopVolumeMeter();
       releaseWakeLock();
       if (recognition) {
         try { recognition.stop(); } catch (e) {}
@@ -1488,18 +1731,40 @@
       document.getElementById('btnStart').classList.remove('hidden');
       document.getElementById('btnStop').classList.add('hidden');
       setStatus('idle', 'Dijeda');
+      document.getElementById('engineStatusText').textContent = 'Pemeriksa bacaan Arab: Dijeda';
       updateWordVisuals();
     }
 
     function initRecognition() {
       recognition = new SpeechRecognitionAPI();
       recognition.lang = 'ar-SA';
-      recognition.continuous = true;
+      // Pada perangkat iOS, mode non-continuous dengan mulai ulang instan mencegah macet di tengah ayat
+      recognition.continuous = !isIOSDevice;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
       recognition.onstart = () => {
         committedPerResult = {};
+        if (isListening) {
+          document.getElementById('engineStatusText').textContent = 'Pemeriksa bacaan Arab: Aktif menyimak...';
+        }
+      };
+
+      recognition.onaudiostart = () => {
+        lastSpeechEngineActivity = Date.now();
+      };
+
+      recognition.onsoundstart = () => {
+        lastSpeechEngineActivity = Date.now();
+        lastSpeechTime = Date.now();
+      };
+
+      recognition.onspeechstart = () => {
+        if (!isPromptingAudio) {
+          lastSpeechEngineActivity = Date.now();
+          lastSpeechTime = Date.now();
+          document.getElementById('engineStatusText').textContent = 'Pemeriksa bacaan Arab: Suara ucapan terdeteksi...';
+        }
       };
 
       recognition.onresult = (event) => {
@@ -1507,6 +1772,7 @@
         const now = Date.now();
         const pauseBeforeSpeech = (now - lastSpeechTime) / 1000;
         lastSpeechTime = now;
+        lastSpeechEngineActivity = now;
 
         let displayTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -1515,6 +1781,7 @@
         const cleanedDisplay = displayTranscript.trim();
         if (cleanedDisplay) {
           document.getElementById('liveSpeech').textContent = cleanedDisplay;
+          document.getElementById('engineStatusText').textContent = 'Pemeriksa bacaan Arab: Mencocokkan kata...';
         }
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -1535,16 +1802,17 @@
         }
       };
 
-      recognition.onspeechstart = () => {
-        if (!isPromptingAudio) {
-          lastSpeechTime = Date.now();
-        }
-      };
-
       recognition.onerror = (event) => {
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          alert('Akses mikrofon diblokir. Pastikan halaman dibuka lewat tautan HTTPS dan izin mikrofon diaktifkan.');
+          setStatus('error', 'Izin mikrofon atau fitur Dikte iPhone belum aktif');
+          document.getElementById('engineStatusText').textContent = 'Aktifkan Izin Mikrofon & menu Dikte di Pengaturan Papan Ketik ponsel.';
           stopRecitation();
+        } else if (event.error === 'language-not-supported') {
+          setStatus('error', 'Bahasa Arab belum didukung pada peramban ini');
+          document.getElementById('engineStatusText').textContent = 'Tambahkan papan ketik Bahasa Arab di pengaturan ponsel Anda.';
+          stopRecitation();
+        } else if (event.error === 'network') {
+          document.getElementById('engineStatusText').textContent = 'Koneksi internet terganggu saat memeriksa suara...';
         }
       };
 
@@ -1555,7 +1823,7 @@
             if (isListening) {
               try { recognition.start(); } catch (e) {}
             }
-          }, 40);
+          }, 30);
         }
       };
 
@@ -1575,7 +1843,14 @@
         const isTokenComplete = isFinal || hasNextToken;
         const batchSize = tokens.length - startTok;
 
-        // 1. Cek kecocokan langsung pada kata aktif saat ini (0 ms lag)
+        // Abaikan bacaan pembuka Ta'awudz atau Basmalah jika diucapkan sebelum kata pertama ayat
+        if (currentWordIdx === 0 && INTRO_IGNORE_TOKENS.has(spoken) && !isWordMatch(spoken, flatWords[0].norm)) {
+          committedPerResult[resultIdx] = t + 1;
+          document.getElementById('engineStatusText').textContent = 'Membaca Ta\'awudz / Basmalah, menunggu awal ayat...';
+          continue;
+        }
+
+        // 1. Cek kecocokan langsung pada kata aktif saat ini
         if (isWordMatch(spoken, flatWords[currentWordIdx].norm)) {
           clearTrailingTimer();
           evaluateMatchedWord(currentWordIdx, pauseBeforeSpeech, batchSize > 1);
@@ -1587,7 +1862,7 @@
           continue;
         }
 
-        // 2. Cek apakah pelajar sudah masuk ke 1-3 kata berikutnya (berarti kata di antaranya salah/terlewat)
+        // 2. Cek apakah pelajar sudah masuk ke 1-3 kata berikutnya
         let matchedAheadIdx = -1;
         for (let offset = 1; offset <= 3; offset++) {
           const checkIdx = currentWordIdx + offset;
@@ -1613,11 +1888,9 @@
           continue;
         }
 
-        // 3. Jika token ini sudah selesai (ada kata berikutnya setelahnya atau hasil final) namun tetap tidak cocok,
-        // langsung tandai merah dan maju tanpa menahan pelajar!
+        // 3. Jika token selesai dan tidak cocok, tandai merah lalu lanjut ke kata berikutnya
         if (isTokenComplete) {
           clearTrailingTimer();
-          // Abaikan jika token hanya pengulangan dari kata yang baru saja diselesaikan
           if (currentWordIdx > 0 && isWordMatch(spoken, flatWords[currentWordIdx - 1].norm)) {
             committedPerResult[resultIdx] = t + 1;
             continue;
@@ -1632,8 +1905,7 @@
           updateWordVisuals();
           if (checkMengajiCompletion()) return;
         } else {
-          // 4. Token paling ujung yang sedang diucapkan (interim): beri batas toleransi 550ms.
-          // Jika dalam 550ms tidak berubah menjadi kata yang benar, otomatis tandai merah dan lanjut maju.
+          // 4. Batas waktu tunggu token sementara 550ms agar sorotan tetap berjalan mulus
           clearTrailingTimer();
           const capturedResultIdx = resultIdx;
           const capturedTokIdx = t;
@@ -1696,6 +1968,11 @@
         if (currentWordIdx >= flatWords.length) break;
         const spoken = tokens[t];
 
+        if (currentWordIdx === 0 && INTRO_IGNORE_TOKENS.has(spoken) && !isWordMatch(spoken, flatWords[0].norm)) {
+          committedPerResult[resultIdx] = t + 1;
+          continue;
+        }
+
         for (let offset = 0; offset <= 1; offset++) {
           const checkIdx = currentWordIdx + offset;
           if (checkIdx >= flatWords.length) break;
@@ -1753,13 +2030,17 @@
       const tNoAlif = target.replace(/ا/g, '');
       if (sNoAlif.length >= 2 && sNoAlif === tNoAlif) return true;
 
+      const sSkeleton = spoken.replace(/[اوي]/g, '');
+      const tSkeleton = target.replace(/[اوي]/g, '');
+      if (sSkeleton.length >= 2 && sSkeleton === tSkeleton) return true;
+
       if (target.length >= 3 && (spoken.includes(target) || target.includes(spoken))) {
         return Math.abs(spoken.length - target.length) <= 2;
       }
 
       const dist = levenshtein(spoken, target);
       const maxLen = Math.max(spoken.length, target.length);
-      if (maxLen >= 3 && (1 - dist / maxLen) >= 0.70) {
+      if (maxLen >= 3 && (1 - dist / maxLen) >= 0.68) {
         return true;
       }
 
@@ -1889,6 +2170,7 @@
       badge.className = 'status-badge';
       if (type === 'listening') badge.classList.add('listening');
       if (type === 'hinting') badge.classList.add('hinting');
+      if (type === 'error') badge.classList.add('error-state');
       document.getElementById('statusText').textContent = text;
     }
   </script>
