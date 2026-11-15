@@ -249,7 +249,7 @@
 
     .button-group {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 8px;
     }
 
@@ -370,8 +370,8 @@
       border-radius: 8px;
       border: 1px solid #e2e8f0;
       flex: 1;
-      min-width: 160px;
-      max-width: 320px;
+      min-width: 150px;
+      max-width: 300px;
     }
 
     .eq-bar {
@@ -380,7 +380,7 @@
       min-height: 4px;
       background: #94a3b8;
       border-radius: 3px;
-      transition: height 0.06s ease, background-color 0.1s ease;
+      transition: height 0.07s ease, background-color 0.1s ease;
     }
 
     .mic-monitor-box.voice-active .eq-bar {
@@ -392,8 +392,19 @@
       color: var(--muted);
       display: flex;
       justify-content: space-between;
+      align-items: center;
       flex-wrap: wrap;
       gap: 6px;
+    }
+
+    .ios-help-box {
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      color: #9a3412;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      margin-top: 4px;
     }
 
     .legend-bar {
@@ -659,7 +670,7 @@
   <div class="container">
     <header>
       <h1>Asisten Belajar Mengaji & Tahfiz</h1>
-      <p>Indikator suara langsung, murottal Qari asli, koreksi tajwid & setoran hafalan</p>
+      <p>Indikator suara bebas bentrok iOS, murottal Qari asli, koreksi tajwid & setoran hafalan</p>
     </header>
 
     <div id="browserWarning" class="warning-banner hidden">
@@ -789,18 +800,24 @@
         </div>
       </div>
 
-      <!-- Indikator Volume Suara Mikrofon Naik-Turun -->
+      <!-- Indikator Sinyal Suara & Pengenal Bacaan Arab -->
       <div id="micMonitorBox" class="mic-monitor-box">
         <div class="mic-top-row">
           <div class="mic-label-group">
-            <span>Volume Suara:</span>
-            <span id="micSignalPill" class="mic-signal-pill">Mikrofon Nonaktif</span>
+            <span>Sinyal Bacaan:</span>
+            <span id="micSignalPill" class="mic-signal-pill">Mikrofon Siap</span>
           </div>
-          <div id="eqBarsContainer" class="eq-bars" aria-label="Grafik volume mikrofon"></div>
+          <div id="eqBarsContainer" class="eq-bars" aria-label="Grafik sinyal suara"></div>
         </div>
         <div class="mic-diag-text">
-          <span id="engineStatusText">Pemeriksa bacaan Arab: Belum dimulai</span>
-          <span id="volumePercentText">Level: 0%</span>
+          <span id="engineStatusText">Status pengenal Arab: Belum dimulai</span>
+          <span id="langActiveText">Bahasa: ar-SA</span>
+        </div>
+        <div id="iosHelpBox" class="ios-help-box hidden">
+          <strong>Cara Mengaktifkan Pengenal Bacaan Arab di iPhone:</strong><br>
+          1. Buka <strong>Pengaturan (Settings)</strong> iPhone &gt; <strong>Umum (General)</strong> &gt; <strong>Papan Ketik (Keyboard)</strong>.<br>
+          2. Pastikan <strong>Aktifkan Dikte (Enable Dictation)</strong> menyala.<br>
+          3. Ketuk <strong>Papan Ketik (Keyboards)</strong> &gt; <strong>Tambah Papan Ketik Baru</strong> &gt; pilih <strong>Arab (Arabic)</strong>, lalu muat ulang halaman ini.
         </div>
       </div>
 
@@ -862,9 +879,11 @@
     let isListening = false;
     let isPromptingAudio = false;
     let recognition = null;
+    let recognitionLang = 'ar-SA';
     let lastSpeechTime = Date.now();
     let lastWordMatchedTime = Date.now();
-    let lastSpeechEngineActivity = 0;
+    let lastSoundDetectedAt = 0;
+    let lastTranscriptAt = 0;
     let silenceTimer = null;
     let trailingMismatchTimer = null;
     let committedPerResult = {};
@@ -873,11 +892,6 @@
     let surahListCache = [];
     let wakeLock = null;
     let playlistQueue = [];
-
-    // Variabel pengukur volume mikrofon
-    let audioCtx = null;
-    let micStream = null;
-    let analyserNode = null;
     let eqBars = [];
     let meterAnimId = null;
 
@@ -909,103 +923,55 @@
       }
     }
 
-    async function startVolumeMeter() {
-      stopVolumeMeter();
+    function startSignalVisualizer() {
+      stopSignalVisualizer();
       const box = document.getElementById('micMonitorBox');
       const pill = document.getElementById('micSignalPill');
 
-      pill.textContent = 'Menunggu suara...';
-
-      try {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          micStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true
-            }
-          });
-          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-          audioCtx = new AudioContextClass();
-          if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
-          }
-          const source = audioCtx.createMediaStreamSource(micStream);
-          analyserNode = audioCtx.createAnalyser();
-          analyserNode.fftSize = 256;
-          analyserNode.smoothingTimeConstant = 0.5;
-          source.connect(analyserNode);
-        }
-      } catch (err) {
-        // Tetap jalankan animasi berbasis deteksi suara pengenalan ucapan jika perangkat membatasi dua jalur audio bersamaan
-        analyserNode = null;
-      }
-
-      const dataArray = analyserNode ? new Uint8Array(analyserNode.frequencyBinCount) : null;
-
-      function renderMeterFrame() {
+      function frame() {
         if (!isListening) return;
 
-        let levelPercent = 0;
+        const now = Date.now();
+        const soundRecent = (now - lastSoundDetectedAt) < 600;
+        const transcriptRecent = (now - lastTranscriptAt) < 750;
+        const isActive = soundRecent || transcriptRecent;
 
-        if (analyserNode && dataArray) {
-          analyserNode.getByteFrequencyData(dataArray);
-          let sum = 0;
-          const usableBins = Math.min(48, dataArray.length);
-          for (let i = 0; i < usableBins; i++) {
-            sum += dataArray[i];
-          }
-          const avg = sum / usableBins;
-          levelPercent = Math.min(100, Math.round((avg / 140) * 100));
+        box.classList.toggle('voice-active', isActive);
+        if (transcriptRecent) {
+          pill.textContent = 'Bacaan Arab Masuk!';
+        } else if (soundRecent) {
+          pill.textContent = 'Suara Masuk!';
+        } else {
+          pill.textContent = 'Menunggu Suara...';
         }
 
-        // Cadangan visual jika sensor pengenalan ucapan mendeteksi suara namun jalur frekuensi teredam sistem
-        const speechRecent = (Date.now() - lastSpeechEngineActivity) < 450;
-        if (levelPercent < 15 && speechRecent) {
-          levelPercent = 45 + Math.floor(Math.random() * 35);
-        }
-
-        const isVoiceDetected = levelPercent >= 12 || speechRecent;
-        box.classList.toggle('voice-active', isVoiceDetected);
-        pill.textContent = isVoiceDetected ? 'Suara Masuk!' : 'Hening (Belum ada suara)';
-        document.getElementById('volumePercentText').textContent = `Level: ${levelPercent}%`;
+        const intensity = transcriptRecent ? 88 : (soundRecent ? 62 : 12);
 
         for (let i = 0; i < eqBars.length; i++) {
-          if (!isVoiceDetected) {
+          if (!isActive) {
             eqBars[i].style.height = '14%';
           } else {
-            const wave = Math.sin((Date.now() / 85) + i * 0.65) * 0.35 + 0.65;
-            const jitter = ((i * 17) % 10) / 35;
-            const barHeight = Math.max(18, Math.min(100, Math.round(levelPercent * (wave + jitter))));
-            eqBars[i].style.height = `${barHeight}%`;
+            const wave = Math.sin((now / 80) + i * 0.65) * 0.35 + 0.65;
+            const jitter = ((i * 19 + Math.floor(now / 70)) % 10) / 30;
+            const h = Math.max(20, Math.min(100, Math.round(intensity * (wave + jitter))));
+            eqBars[i].style.height = `${h}%`;
           }
         }
 
-        meterAnimId = requestAnimationFrame(renderMeterFrame);
+        meterAnimId = requestAnimationFrame(frame);
       }
 
-      meterAnimId = requestAnimationFrame(renderMeterFrame);
+      meterAnimId = requestAnimationFrame(frame);
     }
 
-    function stopVolumeMeter() {
+    function stopSignalVisualizer() {
       if (meterAnimId) {
         cancelAnimationFrame(meterAnimId);
         meterAnimId = null;
       }
-      if (micStream) {
-        micStream.getTracks().forEach(t => t.stop());
-        micStream = null;
-      }
-      if (audioCtx) {
-        audioCtx.close().catch(() => {});
-        audioCtx = null;
-      }
-      analyserNode = null;
-
       const box = document.getElementById('micMonitorBox');
       box.classList.remove('voice-active');
-      document.getElementById('micSignalPill').textContent = 'Mikrofon Nonaktif';
-      document.getElementById('volumePercentText').textContent = 'Level: 0%';
+      document.getElementById('micSignalPill').textContent = 'Mikrofon Siap';
       eqBars.forEach(bar => { bar.style.height = '14%'; });
     }
 
@@ -1697,6 +1663,7 @@
 
       stopQariAudio();
       clearTrailingTimer();
+      document.getElementById('iosHelpBox').classList.add('hidden');
       committedPerResult = {};
       isListening = true;
       isPromptingAudio = false;
@@ -1707,11 +1674,12 @@
       document.getElementById('btnStart').classList.add('hidden');
       document.getElementById('btnStop').classList.remove('hidden');
       setStatus('listening', appMode === 'mengaji' ? 'Menyimak bacaan (salah ditandai merah & lanjut)...' : 'Mendengarkan hafalan anak...');
-      document.getElementById('engineStatusText').textContent = 'Pemeriksa bacaan Arab: Siap menerima bacaan...';
+      document.getElementById('engineStatusText').textContent = 'Status pengenal Arab: Membuka mikrofon...';
       updateWordVisuals();
 
+      // Jalankan langsung di dalam ketukan tombol agar Safari iOS mengizinkan penuh
       initRecognition();
-      startVolumeMeter();
+      startSignalVisualizer();
       startSilenceMonitor();
     }
 
@@ -1719,10 +1687,10 @@
       isListening = false;
       isPromptingAudio = false;
       clearTrailingTimer();
-      stopVolumeMeter();
+      stopSignalVisualizer();
       releaseWakeLock();
       if (recognition) {
-        try { recognition.stop(); } catch (e) {}
+        try { recognition.abort(); } catch (e) {}
       }
       if (silenceTimer) {
         clearInterval(silenceTimer);
@@ -1731,39 +1699,41 @@
       document.getElementById('btnStart').classList.remove('hidden');
       document.getElementById('btnStop').classList.add('hidden');
       setStatus('idle', 'Dijeda');
-      document.getElementById('engineStatusText').textContent = 'Pemeriksa bacaan Arab: Dijeda';
+      document.getElementById('engineStatusText').textContent = 'Status pengenal Arab: Dijeda';
       updateWordVisuals();
     }
 
     function initRecognition() {
       recognition = new SpeechRecognitionAPI();
-      recognition.lang = 'ar-SA';
-      // Pada perangkat iOS, mode non-continuous dengan mulai ulang instan mencegah macet di tengah ayat
+      recognition.lang = recognitionLang;
       recognition.continuous = !isIOSDevice;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
+      document.getElementById('langActiveText').textContent = `Bahasa: ${recognitionLang}`;
+
       recognition.onstart = () => {
         committedPerResult = {};
         if (isListening) {
-          document.getElementById('engineStatusText').textContent = 'Pemeriksa bacaan Arab: Aktif menyimak...';
+          document.getElementById('engineStatusText').textContent = 'Status pengenal Arab: Aktif, silakan mulai membaca';
         }
       };
 
       recognition.onaudiostart = () => {
-        lastSpeechEngineActivity = Date.now();
+        lastSoundDetectedAt = Date.now();
+        document.getElementById('engineStatusText').textContent = 'Status pengenal Arab: Mikrofon terhubung, menyimak...';
       };
 
       recognition.onsoundstart = () => {
-        lastSpeechEngineActivity = Date.now();
+        lastSoundDetectedAt = Date.now();
         lastSpeechTime = Date.now();
       };
 
       recognition.onspeechstart = () => {
         if (!isPromptingAudio) {
-          lastSpeechEngineActivity = Date.now();
+          lastSoundDetectedAt = Date.now();
           lastSpeechTime = Date.now();
-          document.getElementById('engineStatusText').textContent = 'Pemeriksa bacaan Arab: Suara ucapan terdeteksi...';
+          document.getElementById('engineStatusText').textContent = 'Status pengenal Arab: Suara bacaan terdeteksi...';
         }
       };
 
@@ -1772,16 +1742,17 @@
         const now = Date.now();
         const pauseBeforeSpeech = (now - lastSpeechTime) / 1000;
         lastSpeechTime = now;
-        lastSpeechEngineActivity = now;
+        lastSoundDetectedAt = now;
+        lastTranscriptAt = now;
 
         let displayTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
+        for (let i = 0; i < event.results.length; i++) {
           displayTranscript += ' ' + event.results[i][0].transcript;
         }
         const cleanedDisplay = displayTranscript.trim();
         if (cleanedDisplay) {
           document.getElementById('liveSpeech').textContent = cleanedDisplay;
-          document.getElementById('engineStatusText').textContent = 'Pemeriksa bacaan Arab: Mencocokkan kata...';
+          document.getElementById('engineStatusText').textContent = 'Status pengenal Arab: Mencocokkan kata...';
         }
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -1803,16 +1774,24 @@
       };
 
       recognition.onerror = (event) => {
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          setStatus('error', 'Izin mikrofon atau fitur Dikte iPhone belum aktif');
-          document.getElementById('engineStatusText').textContent = 'Aktifkan Izin Mikrofon & menu Dikte di Pengaturan Papan Ketik ponsel.';
+        const errCode = event.error || 'unknown';
+        if (errCode === 'no-speech') {
+          return;
+        }
+
+        if (errCode === 'language-not-supported' && recognitionLang === 'ar-SA') {
+          recognitionLang = 'ar';
+          document.getElementById('engineStatusText').textContent = 'Mencoba kode bahasa Arab umum (ar)...';
+          return;
+        }
+
+        if (errCode === 'not-allowed' || errCode === 'service-not-allowed') {
+          setStatus('error', 'Pengenal suara Arab belum diizinkan pada iPhone');
+          document.getElementById('engineStatusText').textContent = `Kode sistem: ${errCode}`;
+          document.getElementById('iosHelpBox').classList.remove('hidden');
           stopRecitation();
-        } else if (event.error === 'language-not-supported') {
-          setStatus('error', 'Bahasa Arab belum didukung pada peramban ini');
-          document.getElementById('engineStatusText').textContent = 'Tambahkan papan ketik Bahasa Arab di pengaturan ponsel Anda.';
-          stopRecitation();
-        } else if (event.error === 'network') {
-          document.getElementById('engineStatusText').textContent = 'Koneksi internet terganggu saat memeriksa suara...';
+        } else {
+          document.getElementById('engineStatusText').textContent = `Menyambung ulang sensor suara (${errCode})...`;
         }
       };
 
@@ -1821,7 +1800,10 @@
           committedPerResult = {};
           setTimeout(() => {
             if (isListening) {
-              try { recognition.start(); } catch (e) {}
+              try {
+                recognition.lang = recognitionLang;
+                recognition.start();
+              } catch (e) {}
             }
           }, 30);
         }
@@ -1829,7 +1811,9 @@
 
       try {
         recognition.start();
-      } catch (e) {}
+      } catch (e) {
+        document.getElementById('engineStatusText').textContent = 'Gagal memulai mikrofon, coba tekan Mulai Membaca kembali.';
+      }
     }
 
     function processMengajiStream(resultIdx, tokens, isFinal, pauseBeforeSpeech) {
@@ -1843,14 +1827,12 @@
         const isTokenComplete = isFinal || hasNextToken;
         const batchSize = tokens.length - startTok;
 
-        // Abaikan bacaan pembuka Ta'awudz atau Basmalah jika diucapkan sebelum kata pertama ayat
         if (currentWordIdx === 0 && INTRO_IGNORE_TOKENS.has(spoken) && !isWordMatch(spoken, flatWords[0].norm)) {
           committedPerResult[resultIdx] = t + 1;
           document.getElementById('engineStatusText').textContent = 'Membaca Ta\'awudz / Basmalah, menunggu awal ayat...';
           continue;
         }
 
-        // 1. Cek kecocokan langsung pada kata aktif saat ini
         if (isWordMatch(spoken, flatWords[currentWordIdx].norm)) {
           clearTrailingTimer();
           evaluateMatchedWord(currentWordIdx, pauseBeforeSpeech, batchSize > 1);
@@ -1862,7 +1844,6 @@
           continue;
         }
 
-        // 2. Cek apakah pelajar sudah masuk ke 1-3 kata berikutnya
         let matchedAheadIdx = -1;
         for (let offset = 1; offset <= 3; offset++) {
           const checkIdx = currentWordIdx + offset;
@@ -1888,7 +1869,6 @@
           continue;
         }
 
-        // 3. Jika token selesai dan tidak cocok, tandai merah lalu lanjut ke kata berikutnya
         if (isTokenComplete) {
           clearTrailingTimer();
           if (currentWordIdx > 0 && isWordMatch(spoken, flatWords[currentWordIdx - 1].norm)) {
@@ -1905,7 +1885,6 @@
           updateWordVisuals();
           if (checkMengajiCompletion()) return;
         } else {
-          // 4. Batas waktu tunggu token sementara 550ms agar sorotan tetap berjalan mulus
           clearTrailingTimer();
           const capturedResultIdx = resultIdx;
           const capturedTokIdx = t;
