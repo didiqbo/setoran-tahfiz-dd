@@ -78,7 +78,7 @@
       background: var(--card);
       cursor: pointer;
       text-align: center;
-      transition: all 0.2s;
+      transition: all 0.15s;
     }
 
     .mode-card-btn.active {
@@ -365,7 +365,7 @@
       padding: 2px 7px;
       border-radius: 8px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background-color 0.1s ease, color 0.1s ease;
       border-bottom: 2px solid transparent;
     }
 
@@ -564,7 +564,7 @@
   <div class="container">
     <header>
       <h1>Asisten Belajar Mengaji & Tahfiz</h1>
-      <p>Murottal Qari asli, koreksi tajwid & harakat non-stop, dan setoran hafalan anak</p>
+      <p>Murottal Qari asli, koreksi tajwid & harakat seketika tanpa jeda, dan setoran hafalan anak</p>
     </header>
 
     <div id="browserWarning" class="warning-banner hidden">
@@ -574,7 +574,7 @@
     <div class="mode-switcher">
       <button type="button" class="mode-card-btn active" id="btnModeMengaji" onclick="setAppMode('mengaji')">
         <span class="mode-title">Belajar Mengaji & Tajwid</span>
-        <span class="mode-desc">Salah ditandai merah tanpa berhenti</span>
+        <span class="mode-desc">Salah ditandai merah seketika & lanjut</span>
       </button>
       <button type="button" class="mode-card-btn" id="btnModeTahfiz" onclick="setAppMode('tahfiz')">
         <span class="mode-title">Setoran Hafalan</span>
@@ -631,17 +631,17 @@
       <div id="settingsMengaji" class="settings-bar">
         <div>
           <label for="tajwidHighlight">Penanda Garis Tajwid pada Huruf</label>
-          <select id="tajwidHighlight" onchange="renderStage()">
+          <select id="tajwidHighlight" onchange="updateWordVisuals()">
             <option value="on">Aktif</option>
             <option value="off">Nonaktif</option>
           </select>
         </div>
         <div>
-          <label for="strictMad">Ketelitian Panjang Mad</label>
+          <label for="strictMad">Cek Tempo Panjang Mad</label>
           <select id="strictMad">
-            <option value="normal">Sedang</option>
-            <option value="strict">Ketat</option>
-            <option value="relaxed">Longgar untuk Pemula</option>
+            <option value="relaxed">Normal (Tidak Mudah Salah)</option>
+            <option value="strict">Ketat (Wajib Panjang Penuh)</option>
+            <option value="off">Fokus Huruf & Harakat Saja</option>
           </select>
         </div>
         <div>
@@ -664,7 +664,7 @@
         </div>
         <div>
           <label for="maskMode">Tampilan Ayat Sebelum Dibaca</label>
-          <select id="maskMode" onchange="renderStage()">
+          <select id="maskMode" onchange="updateWordVisuals()">
             <option value="hidden">Tertutup Penuh</option>
             <option value="blurred">Samar</option>
           </select>
@@ -696,7 +696,7 @@
 
       <div id="legendMengaji" class="legend-bar">
         <span class="legend-item"><span class="swatch" style="background:#22c55e;"></span> Bacaan Benar</span>
-        <span class="legend-item"><span class="swatch" style="background:#ef4444;"></span> Bacaan Salah (Lanjut)</span>
+        <span class="legend-item"><span class="swatch" style="background:#ef4444;"></span> Bacaan Salah (Otomatis Lanjut)</span>
         <span class="legend-item"><span class="swatch" style="background:#9333ea;"></span> Hukum Mad</span>
         <span class="legend-item"><span class="swatch" style="background:#0284c7;"></span> Dengung Tajwid</span>
         <span class="legend-item"><span class="swatch" style="background:#ea580c;"></span> Qalqalah</span>
@@ -734,7 +734,7 @@
           <span class="stat-pill">Benar: <span id="correctCount">0</span></span>
           <span class="stat-pill" id="pillWrong" style="background:#fee2e2; color:#b91c1c;">Salah: <span id="wrongCount">0</span></span>
           <span class="stat-pill" id="pillHint" style="background:#fef3c7; color:#92400e; display:none;">Bantuan: <span id="hintCount">0</span> kali</span>
-          <span class="stat-pill" style="background:#e2e8f0; color:#334155;">Total: <span id="totalWordsCount">0</span> kata</span>
+          <span class="stat-pill" id="pillTotal" style="background:#e2e8f0; color:#334155;">Total: <span id="totalWordsCount">0</span> kata</span>
         </div>
       </div>
     </div>
@@ -746,6 +746,7 @@
     let appMode = 'mengaji';
     let versesData = [];
     let flatWords = [];
+    let wordElements = [];
     let currentWordIdx = 0;
     let selectedWordIdx = -1;
     let isListening = false;
@@ -754,11 +755,12 @@
     let lastSpeechTime = Date.now();
     let lastWordMatchedTime = Date.now();
     let silenceTimer = null;
+    let trailingMismatchTimer = null;
+    let committedPerResult = {};
     let currentHintLevel = 0;
     let totalHintsUsed = 0;
     let surahListCache = [];
     let wakeLock = null;
-    let currentSurahNumber = 1;
     let playlistQueue = [];
 
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -862,7 +864,6 @@
       const qariEdition = document.getElementById('qariSelect').value || 'ar.husary';
 
       if (!surahNum) return;
-      currentSurahNumber = surahNum;
 
       const stage = document.getElementById('ayatStage');
       stage.innerHTML = '<div style="text-align:center; font-family:sans-serif; font-size:0.95rem;">Mengambil teks ayat Utsmani & audio murottal Qari...</div>';
@@ -898,7 +899,6 @@
     function loadManualVerses() {
       stopRecitation();
       stopQariAudio();
-      currentSurahNumber = 0;
 
       const raw = document.getElementById('manualInput').value.trim();
       if (!raw) return;
@@ -915,6 +915,8 @@
 
     function normalizeArabic(str) {
       return str
+        .replace(/\u0648\u0670/g, '\u0627')
+        .replace(/\u064A\u0670/g, '\u0627')
         .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '')
         .replace(/[أإآٱ]/g, 'ا')
         .replace(/ى/g, 'ي')
@@ -926,10 +928,9 @@
     function analyzeWordTajwid(word, nextWord, isLastWordOfAyah) {
       const rules = [];
       let primaryTag = '';
-      let requiredMinSeconds = 0.22;
+      let requiredMinSeconds = 0.20;
       let waqafType = 'none';
 
-      // 1. Analisis Tanda Waqaf (Ilmu Berhenti dan Lanjut)
       if (word.includes('\u06D9')) {
         waqafType = 'forbid';
         rules.push({
@@ -988,10 +989,9 @@
         });
       }
 
-      // 2. Analisis Panjang Pendek Harakat (Hukum Mad)
       if (word.includes('\u0653')) {
         primaryTag = 'mad';
-        requiredMinSeconds = 0.65;
+        requiredMinSeconds = 0.55;
         rules.push({
           type: 'mad',
           title: 'Mad Panjang: Dibaca 4 sampai 6 Harakat',
@@ -999,7 +999,7 @@
         });
       } else if (/[\u0670\u06E5\u06E6]/.test(word) || /[\u064E]\u0627|[\u0650]\u064A|[\u064F]\u0648/.test(word)) {
         primaryTag = 'mad';
-        requiredMinSeconds = 0.35;
+        requiredMinSeconds = 0.28;
         rules.push({
           type: 'mad',
           title: 'Mad Thabii atau Mad Shilah: Dibaca Panjang 2 Harakat',
@@ -1007,10 +1007,9 @@
         });
       }
 
-      // 3. Analisis Ghunnah (Nun dan Mim Bertasydid)
       if (/[\u0646\u0645]\u0651/.test(word)) {
         if (!primaryTag) primaryTag = 'ghunnah';
-        requiredMinSeconds = Math.max(requiredMinSeconds, 0.42);
+        requiredMinSeconds = Math.max(requiredMinSeconds, 0.35);
         rules.push({
           type: 'ghunnah',
           title: 'Ghunnah Musyaddadah: Dengung 2 Harakat',
@@ -1018,7 +1017,6 @@
         });
       }
 
-      // 4. Analisis Nun Sukun atau Tanwin
       const hasNunSukunOrTanwin = /\u0646[\u0652\u06E1]|[\u064B\u064C\u064D]/.test(word);
       if (hasNunSukunOrTanwin) {
         const combined = word + ' ' + (nextWord || '');
@@ -1062,7 +1060,6 @@
         }
       }
 
-      // 5. Analisis Mim Sukun
       if (/\u0645[\u0652\u06E1]/.test(word)) {
         const combined = word + ' ' + (nextWord || '');
         const matchMim = combined.match(/\u0645[\u0652\u06E1][^\u0621-\u064A]*([\u0621-\u064A])/);
@@ -1092,7 +1089,6 @@
         }
       }
 
-      // 6. Analisis Qalqalah
       if (/[\u0628\u062C\u062F\u0637\u0642][\u0652\u06E1]/.test(word)) {
         if (!primaryTag) primaryTag = 'qalqalah';
         rules.push({
@@ -1190,20 +1186,19 @@
       currentWordIdx = 0;
       currentHintLevel = 0;
       totalHintsUsed = 0;
+      buildStageDOM();
       updateStats();
-      renderStage();
 
       if (appMode === 'mengaji' && flatWords.length > 0) {
         inspectWord(0);
       }
     }
 
-    function renderStage() {
+    function buildStageDOM() {
       const stage = document.getElementById('ayatStage');
+      wordElements = [];
       if (flatWords.length === 0) return;
 
-      const maskMode = document.getElementById('maskMode').value;
-      const showTajwid = document.getElementById('tajwidHighlight').value === 'on';
       stage.innerHTML = '';
 
       versesData.forEach((v, vIdx) => {
@@ -1215,41 +1210,10 @@
 
           const span = document.createElement('span');
           span.className = 'word';
+          span.textContent = w.display;
           span.onclick = () => inspectWord(globalIdx);
-
-          if (appMode === 'mengaji') {
-            span.textContent = w.display;
-
-            if (globalIdx === currentWordIdx && isListening) {
-              span.classList.add('active-cursor');
-            }
-
-            if (showTajwid && w.status === 'pending') {
-              if (w.analysis.primaryTag === 'mad') span.classList.add('tajwid-mad');
-              if (w.analysis.primaryTag === 'ghunnah') span.classList.add('tajwid-ghunnah');
-              if (w.analysis.primaryTag === 'qalqalah') span.classList.add('tajwid-qalqalah');
-              if (w.analysis.waqafType !== 'none') span.classList.add('tajwid-waqaf');
-            }
-
-            if (w.status === 'matched') {
-              span.classList.add('matched-word');
-            } else if (w.status === 'wrong') {
-              span.classList.add('wrong-word');
-            }
-          } else {
-            if (w.status === 'matched') {
-              span.classList.add('matched-word');
-              span.textContent = w.display;
-            } else if (w.status === 'hint') {
-              span.classList.add('hint-word');
-              span.textContent = w.hintText;
-            } else {
-              span.classList.add(maskMode === 'hidden' ? 'hidden-word' : 'blurred-word');
-              span.textContent = w.display;
-            }
-          }
-
           block.appendChild(span);
+          wordElements[globalIdx] = span;
         });
 
         const numBadge = document.createElement('span');
@@ -1268,6 +1232,59 @@
 
         stage.appendChild(block);
       });
+
+      updateWordVisuals();
+    }
+
+    function updateWordVisuals() {
+      if (wordElements.length === 0) return;
+
+      const maskMode = document.getElementById('maskMode').value;
+      const showTajwid = document.getElementById('tajwidHighlight').value === 'on';
+
+      for (let i = 0; i < flatWords.length; i++) {
+        const w = flatWords[i];
+        const span = wordElements[i];
+        if (!span) continue;
+
+        let cls = 'word';
+
+        if (appMode === 'mengaji') {
+          if (span.textContent !== w.display) span.textContent = w.display;
+
+          if (i === currentWordIdx && isListening) {
+            cls += ' active-cursor';
+          }
+
+          if (showTajwid && w.status === 'pending') {
+            if (w.analysis.primaryTag === 'mad') cls += ' tajwid-mad';
+            else if (w.analysis.primaryTag === 'ghunnah') cls += ' tajwid-ghunnah';
+            else if (w.analysis.primaryTag === 'qalqalah') cls += ' tajwid-qalqalah';
+            if (w.analysis.waqafType !== 'none') cls += ' tajwid-waqaf';
+          }
+
+          if (w.status === 'matched') {
+            cls += ' matched-word';
+          } else if (w.status === 'wrong') {
+            cls += ' wrong-word';
+          }
+        } else {
+          if (w.status === 'matched') {
+            cls += ' matched-word';
+            if (span.textContent !== w.display) span.textContent = w.display;
+          } else if (w.status === 'hint') {
+            cls += ' hint-word';
+            if (span.textContent !== w.hintText) span.textContent = w.hintText;
+          } else {
+            cls += maskMode === 'hidden' ? ' hidden-word' : ' blurred-word';
+            if (span.textContent !== w.display) span.textContent = w.display;
+          }
+        }
+
+        if (span.className !== cls) {
+          span.className = cls;
+        }
+      }
     }
 
     function playRealQariAudio(primaryUrl, fallbackUrl, onComplete) {
@@ -1414,8 +1431,15 @@
         flatWords[selectedWordIdx].errorNote = 'Ditandai merah untuk diperbaiki pada pelafalan huruf atau panjang harakat.';
       }
       updateStats();
-      renderStage();
+      updateWordVisuals();
       inspectWord(selectedWordIdx);
+    }
+
+    function clearTrailingTimer() {
+      if (trailingMismatchTimer) {
+        clearTimeout(trailingMismatchTimer);
+        trailingMismatchTimer = null;
+      }
     }
 
     function startRecitation() {
@@ -1432,6 +1456,8 @@
       }
 
       stopQariAudio();
+      clearTrailingTimer();
+      committedPerResult = {};
       isListening = true;
       isPromptingAudio = false;
       lastSpeechTime = Date.now();
@@ -1440,8 +1466,8 @@
 
       document.getElementById('btnStart').classList.add('hidden');
       document.getElementById('btnStop').classList.remove('hidden');
-      setStatus('listening', appMode === 'mengaji' ? 'Menyimak bacaan (salah ditandai merah, lanjut terus)...' : 'Mendengarkan hafalan anak...');
-      renderStage();
+      setStatus('listening', appMode === 'mengaji' ? 'Menyimak bacaan seketika (salah ditandai merah & lanjut)...' : 'Mendengarkan hafalan anak...');
+      updateWordVisuals();
 
       initRecognition();
       startSilenceMonitor();
@@ -1450,6 +1476,7 @@
     function stopRecitation() {
       isListening = false;
       isPromptingAudio = false;
+      clearTrailingTimer();
       releaseWakeLock();
       if (recognition) {
         try { recognition.stop(); } catch (e) {}
@@ -1461,7 +1488,7 @@
       document.getElementById('btnStart').classList.remove('hidden');
       document.getElementById('btnStop').classList.add('hidden');
       setStatus('idle', 'Dijeda');
-      renderStage();
+      updateWordVisuals();
     }
 
     function initRecognition() {
@@ -1469,6 +1496,11 @@
       recognition.lang = 'ar-SA';
       recognition.continuous = true;
       recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        committedPerResult = {};
+      };
 
       recognition.onresult = (event) => {
         if (!isListening || isPromptingAudio) return;
@@ -1476,18 +1508,29 @@
         const pauseBeforeSpeech = (now - lastSpeechTime) / 1000;
         lastSpeechTime = now;
 
-        let fullTranscript = '';
+        let displayTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          fullTranscript += ' ' + event.results[i][0].transcript;
+          displayTranscript += ' ' + event.results[i][0].transcript;
+        }
+        const cleanedDisplay = displayTranscript.trim();
+        if (cleanedDisplay) {
+          document.getElementById('liveSpeech').textContent = cleanedDisplay;
         }
 
-        const cleaned = fullTranscript.trim();
-        if (cleaned) {
-          document.getElementById('liveSpeech').textContent = cleaned;
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (currentWordIdx >= flatWords.length) break;
+
+          const resObj = event.results[i];
+          const isFinal = resObj.isFinal;
+          const rawTranscript = resObj[0].transcript;
+          const tokens = normalizeArabic(rawTranscript).split(/\s+/).filter(Boolean);
+
+          if (tokens.length === 0) continue;
+
           if (appMode === 'mengaji') {
-            processMengajiSpeech(cleaned, pauseBeforeSpeech);
+            processMengajiStream(i, tokens, isFinal, pauseBeforeSpeech);
           } else {
-            processTahfizSpeech(cleaned);
+            processTahfizStream(i, tokens, isFinal);
           }
         }
       };
@@ -1507,7 +1550,12 @@
 
       recognition.onend = () => {
         if (isListening) {
-          try { recognition.start(); } catch (e) {}
+          committedPerResult = {};
+          setTimeout(() => {
+            if (isListening) {
+              try { recognition.start(); } catch (e) {}
+            }
+          }, 40);
         }
       };
 
@@ -1516,79 +1564,166 @@
       } catch (e) {}
     }
 
-    function processMengajiSpeech(transcript, pauseBeforeSpeech) {
-      const spokenTokens = normalizeArabic(transcript).split(/\s+/).filter(Boolean);
-      if (spokenTokens.length === 0) return;
+    function processMengajiStream(resultIdx, tokens, isFinal, pauseBeforeSpeech) {
+      let startTok = committedPerResult[resultIdx] || 0;
 
-      const strictness = document.getElementById('strictMad').value;
-      const madMultiplier = strictness === 'strict' ? 1.15 : (strictness === 'relaxed' ? 0.55 : 0.85);
+      for (let t = startTok; t < tokens.length; t++) {
+        if (currentWordIdx >= flatWords.length) break;
 
-      spokenTokens.forEach(spoken => {
-        if (currentWordIdx >= flatWords.length) return;
+        const spoken = tokens[t];
+        const hasNextToken = (t < tokens.length - 1);
+        const isTokenComplete = isFinal || hasNextToken;
+        const batchSize = tokens.length - startTok;
 
-        const currentObj = flatWords[currentWordIdx];
-        const prevObj = currentWordIdx > 0 ? flatWords[currentWordIdx - 1] : null;
-        const elapsedSinceLastWord = (Date.now() - lastWordMatchedTime) / 1000;
+        // 1. Cek kecocokan langsung pada kata aktif saat ini (0 ms lag)
+        if (isWordMatch(spoken, flatWords[currentWordIdx].norm)) {
+          clearTrailingTimer();
+          evaluateMatchedWord(currentWordIdx, pauseBeforeSpeech, batchSize > 1);
+          currentWordIdx++;
+          committedPerResult[resultIdx] = t + 1;
+          updateStats();
+          updateWordVisuals();
+          if (checkMengajiCompletion()) return;
+          continue;
+        }
 
-        // 1. Cocok dengan kata aktif saat ini
-        if (isWordMatch(spoken, currentObj.norm)) {
-          let errorReason = '';
+        // 2. Cek apakah pelajar sudah masuk ke 1-3 kata berikutnya (berarti kata di antaranya salah/terlewat)
+        let matchedAheadIdx = -1;
+        for (let offset = 1; offset <= 3; offset++) {
+          const checkIdx = currentWordIdx + offset;
+          if (checkIdx >= flatWords.length) break;
+          if (isWordMatch(spoken, flatWords[checkIdx].norm)) {
+            matchedAheadIdx = checkIdx;
+            break;
+          }
+        }
 
-          if (prevObj && prevObj.analysis.waqafType === 'forbid' && pauseBeforeSpeech > 2.2) {
-            errorReason = 'Berhenti terlalu lama setelah tanda Waqaf La pada kata sebelumnya. Seharusnya disambung tanpa berhenti.';
+        if (matchedAheadIdx !== -1) {
+          clearTrailingTimer();
+          for (let k = currentWordIdx; k < matchedAheadIdx; k++) {
+            flatWords[k].status = 'wrong';
+            flatWords[k].errorNote = 'Huruf, harakat, atau panjang pendek pada kata ini kurang tepat atau terlewat saat membaca.';
+          }
+          evaluateMatchedWord(matchedAheadIdx, 0, true);
+          currentWordIdx = matchedAheadIdx + 1;
+          committedPerResult[resultIdx] = t + 1;
+          updateStats();
+          updateWordVisuals();
+          if (checkMengajiCompletion()) return;
+          continue;
+        }
+
+        // 3. Jika token ini sudah selesai (ada kata berikutnya setelahnya atau hasil final) namun tetap tidak cocok,
+        // langsung tandai merah dan maju tanpa menahan pelajar!
+        if (isTokenComplete) {
+          clearTrailingTimer();
+          // Abaikan jika token hanya pengulangan dari kata yang baru saja diselesaikan
+          if (currentWordIdx > 0 && isWordMatch(spoken, flatWords[currentWordIdx - 1].norm)) {
+            committedPerResult[resultIdx] = t + 1;
+            continue;
           }
 
-          if (!errorReason && currentObj.analysis.primaryTag === 'mad' && currentWordIdx > 0) {
-            const minRequired = currentObj.analysis.requiredMinSeconds * madMultiplier;
-            if (elapsedSinceLastWord < minRequired) {
-              errorReason = 'Bacaan Mad terlalu cepat sehingga panjang harakat belum terpenuhi.';
-            }
-          }
-
-          if (errorReason) {
-            currentObj.status = 'wrong';
-            currentObj.errorNote = errorReason;
-          } else {
-            currentObj.status = 'matched';
-            currentObj.errorNote = '';
-          }
-
-          // Terus maju tanpa menghentikan bacaan
+          flatWords[currentWordIdx].status = 'wrong';
+          flatWords[currentWordIdx].errorNote = 'Pelafalan huruf atau harakat belum sesuai dengan kata pada ayat.';
           lastWordMatchedTime = Date.now();
           currentWordIdx++;
+          committedPerResult[resultIdx] = t + 1;
           updateStats();
-          renderStage();
-          checkMengajiCompletion();
-          return;
-        }
+          updateWordVisuals();
+          if (checkMengajiCompletion()) return;
+        } else {
+          // 4. Token paling ujung yang sedang diucapkan (interim): beri batas toleransi 550ms.
+          // Jika dalam 550ms tidak berubah menjadi kata yang benar, otomatis tandai merah dan lanjut maju.
+          clearTrailingTimer();
+          const capturedResultIdx = resultIdx;
+          const capturedTokIdx = t;
+          const capturedWordIdx = currentWordIdx;
 
-        // 2. Jika kata saat ini salah ucap atau terlewat, cek 1-2 kata berikutnya agar bacaan tetap mengalir
-        for (let offset = 1; offset <= 2; offset++) {
-          const aheadIdx = currentWordIdx + offset;
-          if (aheadIdx >= flatWords.length) break;
-
-          if (isWordMatch(spoken, flatWords[aheadIdx].norm)) {
-            for (let k = currentWordIdx; k < aheadIdx; k++) {
-              flatWords[k].status = 'wrong';
-              flatWords[k].errorNote = 'Huruf, harakat, atau panjang pendek pada kata ini kurang tepat atau terlewat saat membaca.';
+          trailingMismatchTimer = setTimeout(() => {
+            if (!isListening || appMode !== 'mengaji') return;
+            if (currentWordIdx === capturedWordIdx && (committedPerResult[capturedResultIdx] || 0) === capturedTokIdx) {
+              flatWords[currentWordIdx].status = 'wrong';
+              flatWords[currentWordIdx].errorNote = 'Pelafalan huruf atau harakat belum sesuai dengan kata pada ayat.';
+              lastWordMatchedTime = Date.now();
+              currentWordIdx++;
+              committedPerResult[capturedResultIdx] = capturedTokIdx + 1;
+              updateStats();
+              updateWordVisuals();
+              checkMengajiCompletion();
             }
-            flatWords[aheadIdx].status = 'matched';
-            flatWords[aheadIdx].errorNote = '';
+          }, 550);
+          break;
+        }
+      }
+    }
 
-            // Tetap menyimak dan lanjut ke kata setelahnya tanpa berhenti
-            lastWordMatchedTime = Date.now();
-            currentWordIdx = aheadIdx + 1;
-            updateStats();
-            renderStage();
-            checkMengajiCompletion();
-            return;
+    function evaluateMatchedWord(wordIdx, pauseBeforeSpeech, isInFastBatch) {
+      const targetObj = flatWords[wordIdx];
+      const prevObj = wordIdx > 0 ? flatWords[wordIdx - 1] : null;
+      const madMode = document.getElementById('strictMad').value;
+      const elapsedSinceLastWord = (Date.now() - lastWordMatchedTime) / 1000;
+
+      let errorReason = '';
+
+      if (prevObj && prevObj.analysis.waqafType === 'forbid' && pauseBeforeSpeech > 2.4) {
+        errorReason = 'Berhenti terlalu lama setelah tanda Waqaf La pada kata sebelumnya. Seharusnya disambung tanpa berhenti.';
+      }
+
+      if (!errorReason && madMode !== 'off' && !isInFastBatch && targetObj.analysis.primaryTag === 'mad' && wordIdx > 0) {
+        const multiplier = madMode === 'strict' ? 1.0 : 0.55;
+        const minRequired = targetObj.analysis.requiredMinSeconds * multiplier;
+        if (elapsedSinceLastWord < minRequired) {
+          errorReason = 'Bacaan Mad terlalu cepat sehingga panjang harakat belum terpenuhi.';
+        }
+      }
+
+      if (errorReason) {
+        targetObj.status = 'wrong';
+        targetObj.errorNote = errorReason;
+      } else {
+        targetObj.status = 'matched';
+        targetObj.errorNote = '';
+      }
+
+      lastWordMatchedTime = Date.now();
+    }
+
+    function processTahfizStream(resultIdx, tokens, isFinal) {
+      let startTok = committedPerResult[resultIdx] || 0;
+      let progressMade = false;
+
+      for (let t = startTok; t < tokens.length; t++) {
+        if (currentWordIdx >= flatWords.length) break;
+        const spoken = tokens[t];
+
+        for (let offset = 0; offset <= 1; offset++) {
+          const checkIdx = currentWordIdx + offset;
+          if (checkIdx >= flatWords.length) break;
+
+          if (isWordMatch(spoken, flatWords[checkIdx].norm)) {
+            for (let k = currentWordIdx; k <= checkIdx; k++) {
+              flatWords[k].status = 'matched';
+            }
+            currentWordIdx = checkIdx + 1;
+            currentHintLevel = 0;
+            committedPerResult[resultIdx] = t + 1;
+            progressMade = true;
+            break;
           }
         }
-      });
+      }
+
+      if (progressMade) {
+        lastSpeechTime = Date.now();
+        updateStats();
+        updateWordVisuals();
+        checkTahfizCompletion();
+      }
     }
 
     function checkMengajiCompletion() {
       if (currentWordIdx >= flatWords.length) {
+        clearTrailingTimer();
         const wrongTotal = flatWords.filter(w => w.status === 'wrong').length;
         const firstWrongIdx = flatWords.findIndex(w => w.status === 'wrong');
         stopRecitation();
@@ -1599,47 +1734,15 @@
         } else {
           setStatus('idle', 'Alhamdulillah! Semua bacaan tepat dan berwarna hijau.');
         }
+        return true;
       }
+      return false;
     }
 
     function checkTahfizCompletion() {
       if (currentWordIdx >= flatWords.length) {
         setStatus('idle', 'Alhamdulillah! Setoran hafalan selesai.');
         stopRecitation();
-      }
-    }
-
-    function processTahfizSpeech(transcript) {
-      const spokenTokens = normalizeArabic(transcript).split(/\s+/).filter(Boolean);
-      if (spokenTokens.length === 0) return;
-
-      let progressMade = false;
-
-      spokenTokens.forEach(spoken => {
-        if (currentWordIdx >= flatWords.length) return;
-
-        for (let offset = 0; offset <= 1; offset++) {
-          const checkIdx = currentWordIdx + offset;
-          if (checkIdx >= flatWords.length) break;
-
-          const target = flatWords[checkIdx].norm;
-          if (isWordMatch(spoken, target)) {
-            for (let k = currentWordIdx; k <= checkIdx; k++) {
-              flatWords[k].status = 'matched';
-            }
-            currentWordIdx = checkIdx + 1;
-            currentHintLevel = 0;
-            progressMade = true;
-            break;
-          }
-        }
-      });
-
-      if (progressMade) {
-        lastSpeechTime = Date.now();
-        updateStats();
-        renderStage();
-        checkTahfizCompletion();
       }
     }
 
@@ -1656,7 +1759,7 @@
 
       const dist = levenshtein(spoken, target);
       const maxLen = Math.max(spoken.length, target.length);
-      if (maxLen >= 3 && (1 - dist / maxLen) >= 0.72) {
+      if (maxLen >= 3 && (1 - dist / maxLen) >= 0.70) {
         return true;
       }
 
@@ -1700,10 +1803,10 @@
             prevObj.status = 'wrong';
             prevObj.errorNote = 'Berhenti pada tanda Waqaf La yang melarang berhenti. Tetap lanjutkan bacaan hingga selesai.';
             updateStats();
-            renderStage();
+            updateWordVisuals();
           }
         }
-      }, 400);
+      }, 300);
     }
 
     function triggerManualHint() {
@@ -1732,7 +1835,7 @@
 
       wordObj.status = 'hint';
       wordObj.hintText = snippet;
-      renderStage();
+      updateWordVisuals();
 
       setStatus('hinting', 'Memancing lanjutan ayat dengan suara Qari...');
 
@@ -1751,6 +1854,8 @@
     function resetProgress() {
       stopRecitation();
       stopQariAudio();
+      clearTrailingTimer();
+      committedPerResult = {};
       flatWords.forEach(w => {
         w.status = 'pending';
         w.hintText = '';
@@ -1762,7 +1867,7 @@
       document.getElementById('liveSpeech').textContent = '-';
       setStatus('idle', 'Siap menyimak');
       updateStats();
-      renderStage();
+      updateWordVisuals();
 
       if (appMode === 'mengaji' && flatWords.length > 0) {
         inspectWord(0);
